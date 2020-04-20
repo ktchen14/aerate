@@ -1,18 +1,6 @@
 import re
-import textwrap
 import unicodedata
 
-from lxml import etree
-
-
-indent = 0
-
-def emit(*args, sep=" ", **kwargs):
-    if sep is None:
-        sep = " "
-    text = sep.join(args)
-    text = textwrap.indent(text, " " * indent)
-    print(text, **kwargs)
 
 class InlineRenderer:
     prefix: str
