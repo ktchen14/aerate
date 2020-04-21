@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+__all__ = ("MutationCursor",)
+
 
 class MutationCursor:
+    """A cursor through an XML element tree that supports mutation."""
+
     def __init__(self, root):
         self._root = root
         self.node = root
@@ -42,35 +46,31 @@ class MutationCursor:
             if ancestor.getnext() is not None:
                 return self.move_to(ancestor.getnext())
 
+        return self.stop()
+
+    def stop(self) -> MutationCursor:
         self.node = None
         return self
 
-    def adjoin(self, node=None):
+    def adjoin(self, node=None, to=None):
         """
         Join the node to its previous sibling node.
         """
 
         node = node if node is not None else self.node
+        to = to if to is not None else node.getprevious()
 
-        to = node.getprevious()
+        # Move the node's text into the target node
+        if len(to):
+            extend_tail(to[-1], node.text)
+        else:
+            extend_text(to, node.text)
 
-        if node.text:
-            if len(to):
-                if to[-1].tail is not None:
-                    to[-1].tail = f"{to[-1].tail}{node.text}"
-                else:
-                    to[-1].tail = node.text
-            else:
-                if to.text is not None:
-                    to.text = f"{to.text}{node.text}"
-                else:
-                    to.text = node.text
-
-        if node.tail:
-            if to.tail is not None:
-                to.tail = f"{to.tail}{node.tail}"
-            else:
-                to.tail = node.tail
+        # Retain the node's tail
+        if node.getprevious() is not None:
+            extend_tail(node.getprevious(), node.tail)
+        else:
+            extend_text(node.getparent(), node.tail)
 
         to.extend(node.iterchildren())
 
@@ -277,11 +277,38 @@ class MutationCursor:
         if node == self.node or node in set(self.node.iterancestors()):
             self.next()
 
-        if node.tail:
-            if node.getprevious() is not None:
-                node.getprevious().tail = f"{node.getprevious().tail}{node.tail}"
-            else:
-                node.getparent().text = f"{node.getparent().text}{node.tail}"
+        # Retain the node's tail
+        if node.getprevious() is not None:
+            extend_tail(node.getprevious(), node.tail)
+        else:
+            extend_text(node.getparent(), node.tail)
+
         node.getparent().remove(node)
 
         return self
+
+
+def extend_text(node, string):
+    """
+    Extend the ``node``'s text with ``string`` (unless it's ``None``).
+
+    If the ``node``'s text is ``None`` then this will set the ``node``'s text
+    to ``string``.
+    """
+
+    if string is None:
+        return
+    node.text = f"{node.text or ''}{string}"
+
+
+def extend_tail(node, string):
+    """
+    Extend the ``node``'s tail with ``string`` (unless it's ``None``).
+
+    If the ``node``'s tail is ``None`` then this will set the ``node``'s tail
+    to ``string``.
+    """
+
+    if string is None:
+        return
+    node.tail = f"{node.tail or ''}{string}"
