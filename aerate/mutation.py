@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 class MutationCursor:
     def __init__(self, root):
         self._root = root
@@ -8,25 +11,39 @@ class MutationCursor:
 
     @property
     def root(self):
+        """Return the root node of the cursor that it can't escape."""
         return self._root
 
-    def move_to(self, node):
-        """Move the cursor to ``node``."""
+    def move_to(self, node) -> MutationCursor:
+        """Move the cursor to the ``node``."""
         self.node = node
         return self
 
-    def next(self):
-        """Move the cursor to the next node."""
+    def next(self) -> MutationCursor:
+        """Move the cursor to the next node in sequence."""
 
         try:
             return self.move_to(self.node[0])
-        except IndexError: pass
+        except IndexError:
+            return self.skip()
+
+    def rewind(self) -> MutationCursor:
+        if self.node.getprevious() is not None:
+            return self.move_to(self.node.getprevious())
+        return self.move_to(self.node.getparent())
+
+    def skip(self) -> MutationCursor:
+        """Skip the cursor's node."""
 
         if self.node.getnext() is not None:
             return self.move_to(self.node.getnext())
 
-        parent = self.node.getparent()
-        return self.move_to(parent.getnext())
+        for ancestor in self.node.iterancestors():
+            if ancestor.getnext() is not None:
+                return self.move_to(ancestor.getnext())
+
+        self.node = None
+        return self
 
     def adjoin(self, node=None):
         """
@@ -38,11 +55,29 @@ class MutationCursor:
         to = node.getprevious()
 
         if node.text:
-            try:
-                to[-1].tail = f"{to[-1].tail}{node.text}"
-            except IndexError:
-                to.text = f"{to[-1].text}{node.text}"
+            if len(to):
+                if to[-1].tail is not None:
+                    to[-1].tail = f"{to[-1].tail}{node.text}"
+                else:
+                    to[-1].tail = node.text
+            else:
+                if to.text is not None:
+                    to.text = f"{to.text}{node.text}"
+                else:
+                    to.text = node.text
+
+        if node.tail:
+            if to.tail is not None:
+                to.tail = f"{to.tail}{node.tail}"
+            else:
+                to.tail = node.tail
+
         to.extend(node.iterchildren())
+
+        if node == self.node or node in set(self.node.iterancestors()):
+            self.next()
+        node.getparent().remove(node)
+        return self
 
     def divide(self, node=None):
         """
@@ -53,9 +88,8 @@ class MutationCursor:
         reparented into this duplicate. The parent node is always kept intact,
         even if it has no text and ``node`` is its first child.
 
-        If ``node`` is ``None`` then the cursor's node will be used. In this
-        case the cursor is moved to the duplicated node (the new parent node).
-        Otherwise this operation doesn't move the cursor.
+        If ``node`` is ``None`` then the cursor's node will be used. In either
+        case this operation doesn't move the cursor.
 
         For example if ``node`` is ``<target>`` in this tree:
 
@@ -89,11 +123,54 @@ class MutationCursor:
                                         node.getparent().attrib,
                                         node.getparent().nsmap)
 
-        if node == self.node:
-            self.move_to(continuation)
-
         continuation.extend([node] + list(node.itersiblings()))
         parent.addnext(continuation)
+
+        return self
+
+    def divide_tail(self, node=None):
+        """
+        Divide the parent of ``node`` on the ``node``'s tail text.
+
+        .. code-block:: xml
+
+           <parent>
+               prefix
+               <target>text</target>
+               tail
+               <sample/>
+               suffix
+           </parent>
+
+        Then when ``<target>`` is divided on its tail text this will become:
+
+        .. code-block:: xml
+
+           <parent>
+               prefix
+               <target>text</target>
+           </parent>
+           <parent>
+               tail
+               <sample/>
+               suffix
+           </parent>
+
+        This doesn't work on the root node or a direct child of the root node.
+        """
+
+        node = node if node is not None else self.node
+
+        parent = node.getparent()
+        continuation = node.makeelement(node.getparent().tag,
+                                        node.getparent().attrib,
+                                        node.getparent().nsmap)
+        continuation.text = node.tail
+        node.tail = None
+        continuation.extend(node.itersiblings())
+        parent.addnext(continuation)
+
+        return self
 
     def lift(self, node=None):
         """
@@ -151,6 +228,8 @@ class MutationCursor:
         if continuation is not None:
             parent.addnext(continuation)
 
+        return self
+
     def remove(self, node=None):
         """
         Remove ``node`` from the document.
@@ -204,3 +283,5 @@ class MutationCursor:
             else:
                 node.getparent().text = f"{node.getparent().text}{node.tail}"
         node.getparent().remove(node)
+
+        return self

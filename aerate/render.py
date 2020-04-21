@@ -1,4 +1,5 @@
 import re
+import textwrap
 import unicodedata
 
 
@@ -85,12 +86,37 @@ class ComputerOutputRenderer(InlineRenderer):
     prefix = "``"
     suffix = "``"
 
+def render_simplesect_return(node, before=""):
+    prefix = ":return: "
+    description_output = textwrap.indent(render_description(node), " " * len(prefix)).strip()
+    return prefix + description_output + "\n\n"
+
 def render_simplesect(node, before=""):
     # Must be "see", "return", "author", "authors", "version", "since", "date",
     # "note", "warning", "pre", "post", "copyright", "invariant", "remark",
     # "attention", "par", or "rcs"
     kind = node.get("kind")
-    return f"{node.tail}"
+
+    if kind == "return":
+        return render_simplesect_return(node, before)
+
+    if kind == "attention":
+        prefix = ".. attention::"
+    elif kind == "note":
+        prefix = ".. note::"
+    elif kind == "warning":
+        prefix = ".. warning::"
+    else:
+        prefix = None
+
+    output = "\n\n".join(
+        render_para(para) for para in node.iterchildren("para")
+    ) + "\n\n"
+
+    if prefix is not None:
+        output = prefix + "\n\n" + textwrap.indent(output, " " * 3)
+
+    return output
 
 def render_ref(node, before=""):
     refid = node.attrib["refid"]
@@ -103,6 +129,40 @@ def render_ref(node, before=""):
 
     return f"{node.text}{node.tail}"
 
+def render_programlisting(node, before=""):
+    prefix = ".. code-block:: c\n\n"
+
+    output = []
+    for codeline in node.iterchildren("codeline"):
+        output.append(codeline.xpath("string()"))
+    return prefix + textwrap.indent("\n".join(output), " " * 3) + "\n\n"
+
+
+def render_parameterlist(node, before=""):
+    if node.get("kind") != "param":
+        return ""
+
+    total_output = ""
+    for item in node.iterchildren():
+        (name,) = item.xpath("./parameternamelist/parametername")
+        (description,) = item.xpath("./parameterdescription")
+
+        output = f":param {name.text}: "
+        description_output = render_description(description)
+
+        output += textwrap.indent(description_output, " " * len(output)).strip()
+        total_output += "\n" + output
+    return total_output + "\n\n"
+
+def render_description(description_node, before=""):
+    output = []
+    for node in description_node:
+        if node.tag != "para":
+            raise NotImplementedError(f"Can't handle <{node.tag}> in <{description_node.tag}>")
+        para_output = render_para(node)
+        output.append(para_output.rstrip())
+    return "\n\n".join(output) + "\n\n"
+
 def render_para(node):
     output = node.text or ""
     for item in node.iterchildren():
@@ -114,6 +174,10 @@ def render_para(node):
             output += ComputerOutputRenderer.render(item, output)
         if item.tag == "simplesect":
             output += render_simplesect(item, output)
+        if item.tag == "programlisting":
+            output += render_programlisting(item, output)
+        if item.tag == "parameterlist":
+            output += render_parameterlist(item, output)
         if item.tag == "ref":
             output += render_ref(item, output)
     return output
