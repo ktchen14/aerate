@@ -8,13 +8,6 @@ from sphinx.ext.autodoc import Documenter
 logger = logging.getLogger(__name__)
 
 
-class HelloWorld(Directive):
-
-    def run(self):
-        paragraph_node = nodes.paragraph(text='Hello World!')
-        return [paragraph_node]
-
-
 class FunctionDocumenter(Documenter):
     objtype = "cfunction"
     domain = "c"
@@ -105,7 +98,6 @@ class FunctionDocumenter(Documenter):
 
 
 def setup(application):
-    application.add_directive("helloworld", HelloWorld)
     application.add_autodocumenter(FunctionDocumenter)
     application.aerate = None
 
