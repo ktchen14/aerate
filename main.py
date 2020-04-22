@@ -56,7 +56,7 @@ for function in document.xpath(r'//memberdef[@kind="function"]'):
         output.append(para_output.rstrip())
     print(textwrap.indent("\n\n".join(output), " " * 3) + "\n\n")
 
-    # break
+    break
 
 
         # paras += [render_para(para)]

@@ -7,7 +7,7 @@ from aerate.index import Index
 
 
 SCRIPT_ROOT = os.path.dirname(os.path.realpath(__file__))
-object_index = Index(os.path.join(SCRIPT_ROOT, "..", "xml"))
+# object_index = Index(os.path.join(SCRIPT_ROOT, "..", "xml"))
 
 
 class InlineRenderer:
@@ -131,10 +131,10 @@ def render_ref(node, before=""):
     # Must be either "compound" or "member"
     kindref = node.attrib["kindref"]
 
-    if kindref == "member":
-        kind, name = object_index.find(kindref, refid)
-        if kind == "function":
-            return f":c:func:`{name}`{node.tail}"
+    # if kindref == "member":
+    #     kind, name = object_index.find(kindref, refid)
+    #     if kind == "function":
+    #         return f":c:func:`{name}`{node.tail}"
 
     return f"{node.text}{node.tail}"
 

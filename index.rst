@@ -10,7 +10,14 @@ Welcome to Aerate's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-.. helloworld::
+.. autocfunction:: vector_at
+
+
+..
+  .. automodule:: aerate.mutation
+
+  .. autoclass:: MutationCursor
+    :members:
 
 
 Indices and tables
