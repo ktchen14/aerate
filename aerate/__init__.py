@@ -9,8 +9,8 @@ class HelloWorld(Directive):
         return [paragraph_node]
 
 
-def setup(app):
-    app.add_directive("helloworld", HelloWorld)
+def setup(application):
+    application.add_directive("helloworld", HelloWorld)
 
     return {
         'version': '0.1',
