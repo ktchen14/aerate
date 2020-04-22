@@ -1,8 +1,6 @@
 from sphinx.util import logging
 from typing import Any, Tuple, List
 
-from docutils import nodes
-from docutils.parsers.rst import Directive
 from sphinx.ext.autodoc import Documenter
 
 logger = logging.getLogger(__name__)
