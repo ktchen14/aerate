@@ -18,3 +18,7 @@ def is_structural(node):
 
 def is_inline(node):
     return node.tag in INLINE_TYPE
+
+
+class SchemaError(Exception):
+    pass
