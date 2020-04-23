@@ -1,84 +1,64 @@
-import sys
+from aerate.schema import INLINE_TYPE, is_inline, is_structural
+from aerate.rule import RuleEngine
 
-from aerate.schema import is_inline, is_structural
+engine = RuleEngine()
 
-module = sys.modules[__name__]
-
-
-def canonicalize(cursor):
-    handle = getattr(module, f"canonicalize_{cursor.node.tag}", None)
-
-    if handle is not None:
-        return handle(cursor)
-
-    if is_inline(cursor.node):
-        return canonicalize_inline(cursor)
-
-    root = cursor.node
-    cursor.next()
-    while cursor and cursor.node.getparent() == root:
-        canonicalize(cursor)
-    return cursor
-
-
-def canonicalize_inline(cursor):
-    """Canonicalize an inline markup node."""
-
-    if cursor.node.tag in {
-        "htmlonly", "manonly", "rtfonly", "latexonly", "docbookonly",
-    }:
-        return cursor.remove()
-
-    # A canonical markup node must be a leaf node. Lift any children that are
-    # inline markup nodes.
-
-    if not cursor.node.text and len(cursor.node) == 0:
-        return cursor.remove()
-
-    if len(cursor.node) == 0:
-        return cursor.next()
-
+@engine.rule(*INLINE_TYPE, when="./*")
+def canonicalize_inline(engine, cursor):
+    """Lift an inline markup node inside an inline markup node."""
     if not is_inline(cursor.node[0]):
         raise NotImplementedError(
             f"Can't handle <{cursor.node[0].tag}> inside <{cursor.node.tag}>")
-
     return cursor.lift(cursor.node[0])
 
+@engine.rule("htmlonly", "manonly", "rtfonly", "latexonly", "docbookonly")
+def remove_unused_inline(engine, cursor):
+    """Remove a ``only`` node unless it's ``xmlonly``."""
+    return cursor.remove()
 
-def canonicalize_simplesect(cursor):
-    if not cursor.node.text and len(cursor.node) == 0:
-        return cursor.remove()
+@engine.rule(*INLINE_TYPE, unless=lambda node: node.text or len(node))
+def remove_null_inline(engine, cursor):
+    """Remove an inline markup node with no text or children."""
+    return cursor.remove()
 
-    if cursor.node.getprevious() is not None and \
-            cursor.node.getprevious().tag == cursor.node.tag and \
-            cursor.node.getprevious().attrib == cursor.node.attrib and \
-            cursor.node.getprevious().nsmap == cursor.node.nsmap:
-        return cursor.adjoin()
-    return cursor.skip()
+@engine.rule("simplesect", when="preceding-sibling::*[1][self::simplesect]")
+def canonicalize_simplesect(engine, cursor):
+    """Absorb a ``simplesect`` into a compatible preceding sibling."""
 
+    if cursor.node.getprevious().tag != cursor.node.tag:
+        return cursor.next()
 
-def canonicalize_highlight(cursor):
-    root = cursor.node
-    cursor.next()
-    while cursor and cursor.node.getparent() == root:
-        if cursor.node.tag == "ref":
-            if root.text is None:
-                root.text = cursor.node.xpath("string()")
-            else:
-                root.text += cursor.node.xpath("string()")
-        elif cursor.node.tag == "sp":
-            if root.text is None:
-                root.text = " "
-            else:
-                root.text += " "
-        cursor.remove()
-    return cursor
+    if cursor.node.getprevious().attrib != cursor.node.attrib:
+        return cursor.next()
 
+    if cursor.node.getprevious().nsmap != cursor.node.nsmap:
+        return cursor.next()
 
-def canonicalize_para(cursor):
-    if not cursor.node.text and len(cursor.node) == 0:
-        return cursor.remove()
+    return cursor.adjoin()
 
+@engine.rule("simplesect", unless=lambda node: node.text or len(node))
+def remove_null_simplesect(engine, cursor):
+    """Remove a ``simplesect`` node with no text or children."""
+    return cursor.remove()
+
+@engine.rule("ref", inside="highlight")
+def textualize_highlight_ref(engine, cursor):
+    if cursor.node.getparent().text is None:
+        cursor.node.getparent().text = cursor.node.xpath("string()")
+    else:
+        cursor.node.getparent().text += cursor.node.xpath("string()")
+    return cursor.remove()
+
+@engine.rule("sp", inside="highlight")
+def textualize_highlight_sp(engine, cursor):
+    if cursor.node.getparent().text is None:
+        cursor.node.getparent().text = " "
+    else:
+        cursor.node.getparent().text += " "
+    return cursor.remove()
+
+@engine.rule("para")
+def canonicalize_para(engine, cursor):
     if cursor.node.text or is_inline(cursor.node[0]):
         is_simple = True
     elif is_structural(cursor.node[0]):
@@ -99,8 +79,12 @@ def canonicalize_para(cursor):
             return cursor.divide().rewind()
 
         if not is_simple and is_structural(cursor.node) and cursor.node.tail:
-            return canonicalize(cursor.divide_tail())
+            return engine.handle(cursor.divide_tail())
 
-        canonicalize(cursor)
+        engine.handle(cursor)
 
     return cursor
+
+@engine.rule("para", unless=lambda node: node.text or len(node))
+def remove_null_para(engine, cursor):
+    return cursor.remove()
