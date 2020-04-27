@@ -21,4 +21,4 @@ def is_inline(node):
 
 
 class SchemaError(Exception):
-    pass
+    """Raised when a node is encountered that's unexpected from the schema."""
