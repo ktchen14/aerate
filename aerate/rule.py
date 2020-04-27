@@ -1,62 +1,109 @@
+class Rule:
+    def __init__(self, action, engine, tags=None, within=None, when=None,
+                 unless=None):
+        self.action = action
+        self.engine = engine
+
+        self.tags = tags
+        self.within = within
+        self.when = when
+        self.unless = unless
+
+    @staticmethod
+    def evaluate(test, node):
+        """
+        Evaluate ``test`` as a callable or XPath expression against ``node``.
+        """
+        return test(node) if callable(test) else node.xpath(test)
+
+    def accept(self, node):
+        """
+        Return whether the rule is configured to handle ``node``.
+
+        If ``tags`` is specified then the ``node``'s tag must be a member of
+        ``tags``.
+
+        If ``within`` is specified then it must be an iterable of strings. Each
+        string must be either a single XML tag (such as ``"node"``) or a ``/``
+        delimited sequence of XML tags (such as ``"foo/bar/baz"``). The rule
+        will accept ``node`` if any string in ``within`` is a *subsequence* of
+        the tags in the ``node``'s ancestor chain. For example if the tags in
+        the ``node``'s ancestor chain are::
+
+            c -> b -> a
+
+        Then the rule will accept the node if any of the strings ``"c"``,
+        ``"b"``, ``"a"``, ``"c/b"``, ``"c/a"``, ``"b/a"``, or ``"c/b/a""`` are
+        in the rule's ``within``.
+
+        If ``when`` is specified then it must be a callable or an XPath
+        expression. When evaluated against ``node`` the result must be
+        ``True``. If specified ``unless`` is just like ``when`` except that
+        when evaluated against ``node`` its result must be ``False``.
+
+        If some combination of conditions are specified then the rule won't
+        accept the ``node`` unless all of them accept the ``node``.
+        """
+
+        if self.tags is not None and node.tag not in self.tags:
+            return False
+
+        if self.within is not None:
+            for within in self.within:
+                ancestor_iter = node.iterancestors()
+                for name in within.split("/"):
+                    if not any(node.tag == name for node in ancestor_iter):
+                        break
+                else: break
+            else: return False
+
+        if self.when is not None and not self.evaluate(self.when, node):
+            return False
+
+        if self.unless is not None and self.evaluate(self.unless, node):
+            return False
+
+        return True
+
+    def handle(self, *args, **kwargs):
+        return self.action(engine, *args, **kwargs)
+
+
 class RuleEngine:
     def __init__(self):
         self.algorithm = []
+        self.memory = {}
 
-    def dispatch_rule(self, rule, cursor):
-        """
-        Call ``rule`` on ``cursor`` if the ``cursor``'s node is matched by ``rule``.
-
-        If ``rule`` doesn't match the ``cursor``'s node then returns ``None``.
-        """
-
-        if rule.tags and cursor.node.tag not in rule.tags:
-            return None
-
-        if rule.inside:
-            tags = frozenset(node.tag for node in cursor.node.iterancestors())
-            if not tags & rule.inside:
-                return None
-
-        if rule.when is not None:
-            if callable(rule.when):
-                result = rule.when(cursor.node)
-            else:
-                result = cursor.node.xpath(rule.when)
-
-            if not result:
-                return None
-
-        if rule.unless is not None:
-            if callable(rule.unless):
-                result = rule.unless(cursor.node)
-            else:
-                result = cursor.node.xpath(rule.unless)
-
-            if result:
-                return None
-
-        return rule(self, cursor)
+    def handle_node(self, cursor):
+        iterator = self.memory.setdefault(cursor.node, iter(self.algorithm))
+        for rule in iterator:
+            if rule.accept(cursor.node):
+                return rule.handle(cursor)
+        return cursor.next()
 
     def handle(self, cursor):
         while cursor:
-            rule = next(rule for rule in reversed(self.algorithm), None)
-            self.dispatch_rule(rule, cursor)
+            self.handle_node(cursor)
 
-    def rule(self, *tags, inside=frozenset(), when=None, unless=None):
+    def rule(self, *tags, within=None, when=None, unless=None):
         """Define a rule on this engine."""
 
-        if isinstance(inside, str):
-            inside = [inside]
-        inside = frozenset(inside)
+        function = None
 
-        if len(tags) == 1 and callable(tags[0]) and not inside and when is None and unless is None:
+        # Handle if this decorator is used without an explicit argument list
+        if len(tags) == 1 and callable(tags[0]) \
+                and within is None \
+                and when is None \
+                and unless is None:
             function, *tags = tags
-        else:
-            function = None
+
+        if isinstance(within, str):
+            within = [within]
+        within = frozenset(within)
 
         def decorator(function):
             function.tags = frozenset(tags)
-            function.inside = inside
+            function.within = within
             function.when = when
             function.unless = unless
             self.algorithm.append(function)
