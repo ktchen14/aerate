@@ -20,23 +20,18 @@ def canonicalize_para(self, cursor):
     else:
         raise SchemaError(f"Can't handle <{cursor.node.tag}> inside <para>")
 
-    root = cursor.node
-    cursor.next()
-    while cursor and root in cursor.node.iterancestors():
-        if not is_inline(cursor.node) and not is_structural(cursor.node):
-            raise SchemaError(f"Can't handle <{cursor.node.tag}> inside <para>")
+    for node in cursor.node:
+        if not is_inline(node) and not is_structural(node):
+            raise SchemaError(f"Can't handle <{node.tag}> inside <para>")
 
-        if is_simple and is_structural(cursor.node):
-            return cursor.divide().rewind()
+        if is_simple and is_structural(node):
+            return cursor.divide(node)
 
-        if not is_simple and is_inline(cursor.node):
-            return cursor.divide().rewind()
+        if not is_simple and is_inline(node):
+            return cursor.divide(node)
 
-        if not is_simple and is_structural(cursor.node) and cursor.node.tail:
-            return self.handle_cursor(cursor.divide_tail())
-
-        self.handle_cursor(cursor)
-
+        if not is_simple and is_structural(node) and node.tail:
+            return cursor.divide_tail(node)
     return cursor
 
 
