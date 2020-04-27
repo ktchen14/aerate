@@ -1,5 +1,5 @@
 from aerate.rule import RuleEngine
-from aerate.schema import INLINE_TAGS, is_inline, is_structural
+from aerate.schema import SchemaError, INLINE_TAGS, is_inline, is_structural
 
 __all__ = ("canonicalization_engine",)
 
@@ -18,13 +18,13 @@ def canonicalize_para(self, cursor):
     elif is_structural(cursor.node[0]):
         is_simple = False
     else:
-        raise NotImplementedError(f"Can't handle <{cursor.node.tag}> inside <para>")
+        raise SchemaError(f"Can't handle <{cursor.node.tag}> inside <para>")
 
     root = cursor.node
     cursor.next()
     while cursor and root in cursor.node.iterancestors():
         if not is_inline(cursor.node) and not is_structural(cursor.node):
-            raise NotImplementedError(f"Can't handle <{cursor.node.tag}> inside <para>")
+            raise SchemaError(f"Can't handle <{cursor.node.tag}> inside <para>")
 
         if is_simple and is_structural(cursor.node):
             return cursor.divide().rewind()
