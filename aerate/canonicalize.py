@@ -47,7 +47,7 @@ def remove_null_simplesect(self, cursor):
     return cursor.remove()
 
 
-@engine.rule("ref", inside="highlight")
+@engine.rule("ref", within="highlight")
 def textualize_highlight_ref(self, cursor):
     if cursor.node.getparent().text is None:
         cursor.node.getparent().text = cursor.node.xpath("string()")
@@ -56,7 +56,7 @@ def textualize_highlight_ref(self, cursor):
     return cursor.remove()
 
 
-@engine.rule("sp", inside="highlight")
+@engine.rule("sp", within="highlight")
 def textualize_highlight_sp(self, cursor):
     if cursor.node.getparent().text is None:
         cursor.node.getparent().text = " "

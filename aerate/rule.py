@@ -97,9 +97,10 @@ class RuleEngine:
                 and not kwargs:
             function, *tags = tags
 
-        if isinstance(within, str):
-            within = [within]
-        within = frozenset(within)
+        if within is not None:
+            if isinstance(within, str):
+                within = [within]
+            within = frozenset(within)
 
         def decorator(function):
             rule = Rule(function, self, tags=tags, within=within, **kwargs)
