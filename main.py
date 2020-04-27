@@ -3,6 +3,7 @@ import os
 import re
 import textwrap
 
+from aerate.canonicalize import canonicalization_engine
 from aerate.canonicalize import canonicalize_para
 from aerate.mutation import MutationCursor
 from aerate.render import render_para
@@ -35,14 +36,15 @@ for function in document.xpath(r'//memberdef[@kind="function"]'):
 
     (detaileddescription,) = function.xpath("./detaileddescription")
     cursor = MutationCursor(detaileddescription).next()
-    while cursor:
-        if detaileddescription not in cursor.node.iterancestors():
-            break
+    canonicalization_engine.handle(cursor)
+    # while cursor:
+    #     if detaileddescription not in cursor.node.iterancestors():
+    #         break
 
-        if cursor.node.tag != "para":
-            raise NotImplementedError(f"Can't handle <{cursor.node.tag}> in <{cursor.root.tag}>")
+    #     if cursor.node.tag != "para":
+    #         raise NotImplementedError(f"Can't handle <{cursor.node.tag}> in <{cursor.root.tag}>")
 
-        canonicalize_para(cursor)
+    #     canonicalize_para(cursor)
 
     # from lxml import etree
     # print(etree.tostring(detaileddescription, pretty_print=True).decode("utf-8"))

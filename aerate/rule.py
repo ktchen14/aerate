@@ -66,7 +66,7 @@ class Rule:
         return True
 
     def handle(self, *args, **kwargs):
-        return self.action(engine, *args, **kwargs)
+        return self.action(self.engine, *args, **kwargs)
 
 
 class RuleEngine:
@@ -104,7 +104,7 @@ class RuleEngine:
 
         def decorator(function):
             rule = Rule(function, self, tags=tags, within=within, **kwargs)
-            self.algorithm.append(function)
+            self.algorithm.append(rule)
             return function
 
         return decorator(function) if function else decorator

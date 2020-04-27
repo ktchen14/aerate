@@ -1,7 +1,9 @@
 from aerate.rule import RuleEngine
 from aerate.schema import INLINE_TAGS, is_inline, is_structural
 
-engine = RuleEngine()
+__all__ = ("canonicalization_engine",)
+
+canonicalization_engine = engine = RuleEngine()
 
 
 @engine.rule(*INLINE_TAGS, when="./*")
