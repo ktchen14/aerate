@@ -87,11 +87,6 @@ class RuleEngine:
         while cursor and (root == cursor.node or root in cursor.node.iterancestors()):
             self.handle_node(cursor)
 
-    def handle_cursor(self, cursor):
-        root = cursor.root
-        while cursor and (root == cursor.node or root in cursor.node.iterancestors()):
-            self.handle_node(cursor)
-
     def rule(self, *tags, before=None, within=None, **kwargs):
         """Define a rule on this engine."""
 
