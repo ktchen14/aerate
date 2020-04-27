@@ -85,16 +85,16 @@ class RuleEngine:
         while cursor:
             self.handle_node(cursor)
 
-    def rule(self, *tags, within=None, when=None, unless=None):
+    def rule(self, *tags, before=None, within=None, **kwargs):
         """Define a rule on this engine."""
 
         function = None
 
         # Handle if this decorator is used without an explicit argument list
         if len(tags) == 1 and callable(tags[0]) \
+                and before is None \
                 and within is None \
-                and when is None \
-                and unless is None:
+                and not kwargs:
             function, *tags = tags
 
         if isinstance(within, str):
@@ -102,10 +102,7 @@ class RuleEngine:
         within = frozenset(within)
 
         def decorator(function):
-            function.tags = frozenset(tags)
-            function.within = within
-            function.when = when
-            function.unless = unless
+            rule = Rule(function, self, tags=tags, within=within, **kwargs)
             self.algorithm.append(function)
             return function
 
