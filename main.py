@@ -35,8 +35,7 @@ for function in document.xpath(r'//memberdef[@kind="function"]'):
     print(textwrap.indent("\n\n".join(output), " " * 3) + "\n\n")
 
     (detaileddescription,) = function.xpath("./detaileddescription")
-    cursor = MutationCursor(detaileddescription).next()
-    canonicalization_engine.handle(cursor)
+    canonicalization_engine.handle(detaileddescription)
     # while cursor:
     #     if detaileddescription not in cursor.node.iterancestors():
     #         break

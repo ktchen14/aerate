@@ -81,8 +81,15 @@ class RuleEngine:
                 return rule.handle(cursor)
         return cursor.next()
 
-    def handle(self, cursor):
-        while cursor:
+    def handle(self, root):
+        from aerate.mutation import MutationCursor
+        cursor = MutationCursor(root)
+        while cursor and (root == cursor.node or root in cursor.node.iterancestors()):
+            self.handle_node(cursor)
+
+    def handle_cursor(self, cursor):
+        root = cursor.root
+        while cursor and (root == cursor.node or root in cursor.node.iterancestors()):
             self.handle_node(cursor)
 
     def rule(self, *tags, before=None, within=None, **kwargs):
