@@ -26,9 +26,9 @@ class Rule:
         If ``within`` is specified then it must be an iterable of strings. Each
         string must be either a single XML tag (such as ``"node"``) or a ``/``
         delimited sequence of XML tags (such as ``"foo/bar/baz"``). The rule
-        will accept ``node`` if any string in ``within`` is a *subsequence* of
-        the tags in the ``node``'s ancestor chain. For example if the tags in
-        the ``node``'s ancestor chain are::
+        will accept ``node`` if any string in ``within`` represents a
+        *subsequence* of the tags in the ``node``'s ancestor chain. For example
+        if the tags in the ``node``'s ancestor chain are::
 
             c -> b -> a
 
