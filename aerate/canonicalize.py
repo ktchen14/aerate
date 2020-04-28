@@ -68,7 +68,7 @@ def remove_null_simplesect(self, cursor):
 
 
 @engine.rule("simplesect", when="preceding-sibling::*[1][self::simplesect]")
-def absorb_identical_simplesect(self, cursor):
+def absorb_compatible_simplesect(self, cursor):
     """Absorb a ``simplesect`` into a compatible preceding sibling."""
 
     if cursor.node.getprevious().tag != cursor.node.tag:
@@ -115,4 +115,5 @@ def canonicalize_para(self, cursor):
 
 @engine.rule("para", unless=lambda node: node.text or len(node))
 def remove_null_para(self, cursor):
+    """Remove a ``para`` node with no text or children."""
     return cursor.remove()
