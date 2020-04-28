@@ -27,12 +27,15 @@ STRUCTURAL_TAGS = {
 
 
 def is_description(node):
+    """Return whether the ``node`` is a description type node."""
     return node.tag in DESCRIPTION_TAGS
 
 
 def is_inline(node):
+    """Return whether the ``node`` is an inline markup node."""
     return node.tag in INLINE_TAGS
 
 
 def is_structural(node):
+    """Return whether the ``node`` is a structural markup node."""
     return node.tag in STRUCTURAL_TAGS
