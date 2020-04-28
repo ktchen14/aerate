@@ -1,13 +1,14 @@
 class Rule:
-    def __init__(self, action, engine, tags=None, within=None, when=None,
-                 unless=None):
+    def __init__(self, action, tags=None, within=None, when=None, unless=None):
         self.action = action
-        self.engine = engine
 
         self.tags = tags
         self.within = within
         self.when = when
         self.unless = unless
+
+    def __repr__(self):
+        return f"<Rule {self.action.__name__} at {id(self):#x}>"
 
     @staticmethod
     def evaluate(test, node):
@@ -66,7 +67,7 @@ class Rule:
         return True
 
     def handle(self, *args, **kwargs):
-        return self.action(self.engine, *args, **kwargs)
+        return self.action(*args, **kwargs)
 
 
 class RuleEngine:
@@ -78,7 +79,7 @@ class RuleEngine:
         iterator = self.memory.setdefault(cursor.node, iter(self.algorithm))
         for rule in iterator:
             if rule.accept(cursor.node):
-                return rule.handle(cursor)
+                return rule.handle(self, cursor)
         return cursor.next()
 
     def handle(self, root):
@@ -105,7 +106,7 @@ class RuleEngine:
             within = frozenset(within)
 
         def decorator(function):
-            rule = Rule(function, self, tags=tags, within=within, **kwargs)
+            rule = Rule(function, tags=tags, within=within, **kwargs)
             self.algorithm.append(rule)
             return function
 
@@ -119,7 +120,7 @@ class RenderEngine:
     def handle(self, node, before=""):
         for rule in self.algorithm:
             if rule.accept(node):
-                return rule.handle(node, before)
+                return rule.handle(self, node, before)
         return node.xpath("string()")
 
     def rule(self, *tags, before=None, within=None, **kwargs):
@@ -140,7 +141,7 @@ class RenderEngine:
             within = frozenset(within)
 
         def decorator(function):
-            rule = Rule(function, self, tags=tags, within=within, **kwargs)
+            rule = Rule(function, tags=tags, within=within, **kwargs)
             self.algorithm.append(rule)
             return function
 
