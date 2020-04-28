@@ -222,11 +222,8 @@ class MutationCursor:
             continuation.text = node.tail
             node.tail = None
             continuation.extend(list(node.itersiblings()))
-
-        parent.addnext(node)
-
-        if continuation is not None:
             parent.addnext(continuation)
+        parent.addnext(node)
 
         return self
 
