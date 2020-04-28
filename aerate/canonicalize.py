@@ -61,6 +61,12 @@ def trim_inline(self, cursor):
     return cursor
 
 
+@engine.rule(*INLINE_TAGS, unless=lambda node: node.text or len(node))
+def remove_null_inline(self, cursor):
+    """Remove an inline markup node with no text or children."""
+    return cursor.remove()
+
+
 @engine.rule("simplesect", unless=lambda node: node.text or len(node))
 def remove_null_simplesect(self, cursor):
     """Remove a ``simplesect`` node with no text or children."""
@@ -81,12 +87,6 @@ def absorb_compatible_simplesect(self, cursor):
         return cursor.next()
 
     return cursor.adjoin()
-
-
-@engine.rule(*INLINE_TAGS, unless=lambda node: node.text or len(node))
-def remove_null_inline(self, cursor):
-    """Remove an inline markup node with no text or children."""
-    return cursor.remove()
 
 
 @engine.rule("para")
