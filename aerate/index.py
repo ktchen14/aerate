@@ -32,7 +32,7 @@ class DocumentableObject:
 
             relative_path = compound_node.attrib["refid"] + ".xml"
 
-            document = self.index.get_document(relative_path)
+            document = self.index.load_document(relative_path)
             if self.index_node.tag == "compound":
                 result = document.xpath(r'//compounddef[@id=$refid and @kind=$kind]',
                                         refid=self.id, kind=self.kind)
@@ -54,14 +54,14 @@ class Index:
                                 remove_pis=True,
                                 strip_cdata=True)
         self.document = etree.parse(index_path, self.parser)
-        self.memo = {"index.xml": self.document}
+        self.document_memo = {"index.xml": self.document}
 
-    def get_document(self, name):
-        if name not in self.memo:
+    def load_document(self, name):
+        if name not in self.document_memo:
             path = os.path.join(self.doxygen_root, name)
             document = etree.parse(path, self.parser)
-            self.memo[name] = document
-        return self.memo[name]
+            self.document_memo[name] = document
+        return self.document_memo[name]
 
     def find(self, kind, id):
         # kind must be either "compound" or "member"
@@ -75,13 +75,22 @@ class Index:
                 result = result[0]
         return result.get("kind"), result.xpath("./name")[0].text
 
+    def find_by_id(self, id):
+        result = self.document.xpath("//*[@refid=$refid]", refid=id)
+        if not result:
+            raise KeyError(repr(id))
+        elif len(result) > 1:
+            result = result[0]
+        return DocumentableObject(self, result)
+
     def find_module_by_name(self, name):
         result = self.document.xpath(r'//compound[name/text()=$name]',
                                      name=name)
         if not result:
             raise KeyError(repr(name))
         elif len(result) > 1:
-            raise KeyError(repr(name))
+            pass
+            # raise KeyError(repr(name))
 
         return DocumentableObject(self, result[0])
 
@@ -98,6 +107,7 @@ class Index:
         if not result:
             raise KeyError(repr(name))
         elif len(result) > 1:
-            raise KeyError(repr(name))
+            pass
+            # raise KeyError(repr(name))
 
         return DocumentableObject(self, result[0])

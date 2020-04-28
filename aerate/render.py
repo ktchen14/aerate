@@ -154,15 +154,25 @@ def render_simplesect(self, node, before=""):
 
 @renderer.rule("ref", within="para")
 def render_ref(self, node, before=""):
+    if node.get("external"):
+        return f"{node.text}{node.tail}"
+
     refid = node.attrib["refid"]
+    try:
+        target = self.aerate.index.find_by_id(refid)
+    except KeyError:
+        return f"{node.text}{node.tail}"
 
-    # Must be either "compound" or "member"
-    kindref = node.attrib["kindref"]
-
-    # if kindref == "member":
-    #     kind, name = object_index.find(kindref, refid)
-    #     if kind == "function":
-    #         return f":c:func:`{name}`{node.tail}"
+    if target.kind == "function":
+        if target.name == node.text:
+            return f":c:func:`{target.name}`{node.tail}"
+        else:
+            return f":c:func:`{node.text} <{target.name}>`{node.tail}"
+    elif target.kind == "typedef":
+        if target.name == node.text:
+            return f":c:type:`{target.name}`{node.tail}"
+        else:
+            return f":c:type:`{node.text} <{target.name}>`{node.tail}"
 
     return f"{node.text}{node.tail}"
 
@@ -238,6 +248,28 @@ def render_function_definition(self, node, buffer=""):
     (argsstring,) = node.xpath("./argsstring")
 
     output = f".. c:function:: {definition.text}{argsstring.text}\n\n"
+
+    (briefdescription,) = node.xpath("./briefdescription")
+    description_output = self.handle(briefdescription)
+    output += textwrap.indent(description_output, " " * 3) + "\n\n"
+
+    (detaileddescription,) = node.xpath("./detaileddescription")
+    description_output = self.handle(detaileddescription)
+    output += textwrap.indent(description_output, " " * 3) + "\n\n"
+
+    (inbodydescription,) = node.xpath("./inbodydescription")
+    description_output = self.handle(inbodydescription)
+    output += textwrap.indent(description_output, " " * 3) + "\n\n"
+
+    return output
+
+
+@renderer.rule("memberdef", when=lambda node: node.get("kind") == "typedef")
+def render_function_definition(self, node, buffer=""):
+    (type_node,) = node.xpath("./type")
+    (name_node,) = node.xpath("./name")
+
+    output = f".. c:type:: {type_node.text} {name_node.text}\n\n"
 
     (briefdescription,) = node.xpath("./briefdescription")
     description_output = self.handle(briefdescription)

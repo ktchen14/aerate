@@ -1,18 +1,34 @@
-from lxml import etree
 import os
-
-from aerate.adjust import adjuster
-from aerate.render import renderer
+from aerate.aerate import Aerate
 
 SCRIPT_ROOT = os.path.dirname(os.path.realpath(__file__))
 
-with open(os.path.join(SCRIPT_ROOT, "xml", "access_8h.xml")) as file:
-    parser = etree.XMLParser(ns_clean=True,
-                             remove_blank_text=True,
-                             remove_comments=True,
-                             remove_pis=True)
-    document = etree.parse(file, parser)
+aerate = Aerate(os.path.join(SCRIPT_ROOT, "xml"))
 
-for function_node in document.xpath(r'//memberdef[@kind="function"]'):
-    adjuster.handle(function_node)
-    print(renderer.handle(function_node))
+item = aerate.index.find_member_by_name("vector_c")
+aerate.adjuster.handle(item.node)
+print(aerate.renderer.handle(item.node))
+
+item = aerate.index.find_member_by_name("vector_at", module="access.h")
+aerate.adjuster.handle(item.node)
+print(aerate.renderer.handle(item.node))
+
+item = aerate.index.find_member_by_name("vector_index", module="access.h")
+aerate.adjuster.handle(item.node)
+print(aerate.renderer.handle(item.node))
+
+item = aerate.index.find_member_by_name("vector_get", module="access.h")
+aerate.adjuster.handle(item.node)
+print(aerate.renderer.handle(item.node))
+
+item = aerate.index.find_member_by_name("vector_set", module="access.h")
+aerate.adjuster.handle(item.node)
+print(aerate.renderer.handle(item.node))
+
+item = aerate.index.find_member_by_name("vector_tail", module="access.h")
+aerate.adjuster.handle(item.node)
+print(aerate.renderer.handle(item.node))
+
+item = aerate.index.find_member_by_name("vector_insert_z", module="insert.h")
+aerate.adjuster.handle(item.node)
+print(aerate.renderer.handle(item.node))
