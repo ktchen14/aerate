@@ -1,13 +1,9 @@
 from lxml import etree
 import os
-import re
 import textwrap
 
-from aerate.canonicalize import canonicalization_engine
-from aerate.canonicalize import canonicalize_para
-from aerate.render import render_engine
-from aerate.mutation import MutationCursor
-from aerate.render import render_para
+from aerate.adjust import adjuster
+from aerate.render import renderer
 
 SCRIPT_ROOT = os.path.dirname(os.path.realpath(__file__))
 
@@ -26,23 +22,11 @@ for function in document.xpath(r'//memberdef[@kind="function"]'):
     print(f".. c:function:: {definition.text}{argsstring.text}\n")
 
     (briefdescription,) = function.xpath("./briefdescription")
-    canonicalization_engine.handle(briefdescription)
-    output = render_engine.handle(briefdescription)
+    adjuster.handle(briefdescription)
+    output = renderer.handle(briefdescription)
     print(textwrap.indent(output, " " * 3) + "\n\n")
 
     (detaileddescription,) = function.xpath("./detaileddescription")
-    canonicalization_engine.handle(detaileddescription)
-    output = render_engine.handle(detaileddescription)
+    adjuster.handle(detaileddescription)
+    output = renderer.handle(detaileddescription)
     print(textwrap.indent(output, " " * 3) + "\n\n")
-
-    # from lxml import etree
-    # print(etree.tostring(detaileddescription, pretty_print=True).decode("utf-8"))
-    # break
-
-    # break
-
-
-        # paras += [render_para(para)]
-    # emit("\n\n".join(paras))
-
-    # print(function.get("id"))
