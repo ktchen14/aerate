@@ -14,6 +14,10 @@ class InlineRenderer:
 
     @staticmethod
     def escape_head(node, before):
+        """
+        Return whether to escape with ``\\\\ `` before the rendered ``node``.
+        """
+
         # Inline markup start-strings must start a text block or be immediately
         # preceded by whitespace, one of the ASCII characters:
         #   - : / ' " < ( [ {
@@ -64,6 +68,8 @@ class InlineRenderer:
 
     @staticmethod
     def escape_tail(node):
+        """Return whether to escape the ``node``'s tail with ``\\\\``."""
+
         # Inline markup end-strings must end a text block or be immediately
         # followed by whitespace, one of the ASCII characters:
         #   - . , : ; ! ? \ / ' " ) ] } >
@@ -87,6 +93,8 @@ class InlineRenderer:
         return True
 
     def render(self, node, buffer=""):
+        """Render the ``node``."""
+
         # The inline markup end-string must be separated by at least one
         # character from the start-string.
 
@@ -108,8 +116,10 @@ class InlineRenderer:
 
 
 bold_renderer = InlineRenderer("**")
-computer_output_renderer = InlineRenderer("``")
 emphasis_renderer = InlineRenderer("*")
+computeroutput_renderer = InlineRenderer("``")
+subscript_renderer = InlineRenderer(":subscript:`", "`")
+superscript_renderer = InlineRenderer(":superscript:`", "`")
 
 
 @engine.rule("simplesect", when=lambda node: node.get("kind") == "return")
@@ -170,14 +180,24 @@ def render_bold(self, node, before=""):
     return bold_renderer.render(node, before)
 
 
-@engine.rule("computeroutput")
-def render_computeroutput(self, node, before=""):
-    return computer_output_renderer.render(node, before)
-
-
 @engine.rule("emphasis")
 def render_emphasis(self, node, before=""):
     return emphasis_renderer.render(node, before)
+
+
+@engine.rule("computeroutput")
+def render_computeroutput(self, node, before=""):
+    return computeroutput_renderer.render(node, before)
+
+
+@engine.rule("subscript")
+def render_subscript(self, node, before=""):
+    return subscript_renderer.render(node, before)
+
+
+@engine.rule("superscript")
+def render_superscript(self, node, before=""):
+    return superscript_renderer.render(node, before)
 
 
 @engine.rule("para")
