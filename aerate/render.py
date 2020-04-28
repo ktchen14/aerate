@@ -141,12 +141,14 @@ def render_simplesect_admonition(self, node, before=""):
     output = textwrap.indent(output, " " * 3)
     return prefix + "\n\n" + output + "\n\n"
 
+
 @engine.rule("simplesect")
 def render_simplesect(self, node, before=""):
     output = "\n\n".join(
         self.handle(para) for para in node.iterchildren("para")
     ) + "\n\n"
     return output
+
 
 @engine.rule("ref", within="para")
 def render_ref(self, node, before=""):
