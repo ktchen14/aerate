@@ -14,19 +14,6 @@ with open(os.path.join(SCRIPT_ROOT, "xml", "access_8h.xml")) as file:
                              remove_pis=True)
     document = etree.parse(file, parser)
 
-# for function in reversed(document.xpath(r'//memberdef[@kind="function"]')):
-for function in document.xpath(r'//memberdef[@kind="function"]'):
-    (definition,) = function.xpath("./definition")
-    (argsstring,) = function.xpath("./argsstring")
-
-    print(f".. c:function:: {definition.text}{argsstring.text}\n")
-
-    (briefdescription,) = function.xpath("./briefdescription")
-    adjuster.handle(briefdescription)
-    output = renderer.handle(briefdescription)
-    print(textwrap.indent(output, " " * 3) + "\n\n")
-
-    (detaileddescription,) = function.xpath("./detaileddescription")
-    adjuster.handle(detaileddescription)
-    output = renderer.handle(detaileddescription)
-    print(textwrap.indent(output, " " * 3) + "\n\n")
+for function_node in document.xpath(r'//memberdef[@kind="function"]'):
+    adjuster.handle(function_node)
+    print(renderer.handle(function_node))

@@ -230,3 +230,21 @@ def render_description(self, node, before=""):
             raise SchemaError(f"Can't handle <{item.tag}> in <{node.tag}>")
         output.append(self.handle(item).rstrip())
     return "\n\n".join(output)
+
+
+@renderer.rule("memberdef", when=lambda node: node.get("kind") == "function")
+def render_function_definition(self, node, buffer=""):
+    (definition,) = node.xpath("./definition")
+    (argsstring,) = node.xpath("./argsstring")
+
+    output = f".. c:function:: {definition.text}{argsstring.text}\n\n"
+
+    (briefdescription,) = node.xpath("./briefdescription")
+    description_output = self.handle(briefdescription)
+    output += textwrap.indent(description_output, " " * 3) + "\n\n"
+
+    (detaileddescription,) = node.xpath("./detaileddescription")
+    description_output = self.handle(detaileddescription)
+    output += textwrap.indent(description_output, " " * 3) + "\n\n"
+
+    return output
