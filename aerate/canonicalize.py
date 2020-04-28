@@ -1,38 +1,12 @@
+import re
+
+from aerate.mutation import extend_tail, extend_text
 from aerate.rule import RuleEngine
 from aerate.schema import SchemaError, INLINE_TAGS, is_inline, is_structural
 
 __all__ = ("canonicalization_engine",)
 
 canonicalization_engine = engine = RuleEngine()
-
-
-@engine.rule("para", unless=lambda node: node.text or len(node))
-def remove_null_para(self, cursor):
-    return cursor.remove()
-
-
-@engine.rule("para")
-def canonicalize_para(self, cursor):
-    if cursor.node.text or is_inline(cursor.node[0]):
-        is_simple = True
-    elif is_structural(cursor.node[0]):
-        is_simple = False
-    else:
-        raise SchemaError(f"Can't handle <{cursor.node.tag}> inside <para>")
-
-    for node in cursor.node:
-        if not is_inline(node) and not is_structural(node):
-            raise SchemaError(f"Can't handle <{node.tag}> inside <para>")
-
-        if is_simple and is_structural(node):
-            return cursor.divide(node)
-
-        if not is_simple and is_inline(node):
-            return cursor.divide(node)
-
-        if not is_simple and is_structural(node) and node.tail:
-            return cursor.divide_tail(node)
-    return cursor
 
 
 @engine.rule("ref", within="highlight")
@@ -51,6 +25,40 @@ def textualize_highlight_sp(self, cursor):
     else:
         cursor.node.getparent().text += " "
     return cursor.remove()
+
+
+@engine.rule("htmlonly", "manonly", "rtfonly", "latexonly", "docbookonly")
+def remove_unused_inline(self, cursor):
+    """Remove a ``...only`` node unless it's ``xmlonly``."""
+    return cursor.remove()
+
+
+@engine.rule(*INLINE_TAGS, when="./*")
+def lift_nested_inline(self, cursor):
+    """Lift an inline markup node inside an inline markup node."""
+    if not is_inline(cursor.node[0]):
+        raise NotImplementedError(
+            f"Can't handle <{cursor.node[0].tag}> inside <{cursor.node.tag}>")
+    return cursor.lift(cursor.node[0])
+
+
+@engine.rule(*INLINE_TAGS, when=lambda node: node.text)
+def trim_inline(self, cursor):
+    """Lift leading and trailing whitespace from an inline markup node."""
+
+    m = re.match(r'^(\s*)(.*?)(\s*)$', cursor.node.text)
+    head, text, tail = m.groups()
+
+    if cursor.node.getprevious() is not None:
+        extend_tail(cursor.node.getprevious(), head)
+    else:
+        extend_text(cursor.node.getparent(), head)
+
+    if tail:
+        cursor.node.tail = tail + (cursor.node.tail or "")
+
+    cursor.node.text = text
+    return cursor
 
 
 @engine.rule("simplesect", unless=lambda node: node.text or len(node))
@@ -81,16 +89,30 @@ def remove_null_inline(self, cursor):
     return cursor.remove()
 
 
-@engine.rule("htmlonly", "manonly", "rtfonly", "latexonly", "docbookonly")
-def remove_unused_inline(self, cursor):
-    """Remove a ``only`` node unless it's ``xmlonly``."""
+@engine.rule("para")
+def canonicalize_para(self, cursor):
+    if cursor.node.text or is_inline(cursor.node[0]):
+        is_simple = True
+    elif is_structural(cursor.node[0]):
+        is_simple = False
+    else:
+        raise SchemaError(f"Can't handle <{cursor.node.tag}> inside <para>")
+
+    for node in cursor.node:
+        if not is_inline(node) and not is_structural(node):
+            raise SchemaError(f"Can't handle <{node.tag}> inside <para>")
+
+        if is_simple and is_structural(node):
+            return cursor.divide(node)
+
+        if not is_simple and is_inline(node):
+            return cursor.divide(node)
+
+        if not is_simple and is_structural(node) and node.tail:
+            return cursor.divide_tail(node)
+    return cursor
+
+
+@engine.rule("para", unless=lambda node: node.text or len(node))
+def remove_null_para(self, cursor):
     return cursor.remove()
-
-
-@engine.rule(*INLINE_TAGS, when="./*")
-def lift_nested_inline(self, cursor):
-    """Lift an inline markup node inside an inline markup node."""
-    if not is_inline(cursor.node[0]):
-        raise NotImplementedError(
-            f"Can't handle <{cursor.node[0].tag}> inside <{cursor.node.tag}>")
-    return cursor.lift(cursor.node[0])

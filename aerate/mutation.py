@@ -290,25 +290,25 @@ class MutationCursor:
 
 def extend_text(node, string):
     """
-    Extend the ``node``'s text with ``string`` (unless it's ``None``).
+    Append ``string`` to the ``node``'s text (unless it's ``None`` or ``""``).
 
     If the ``node``'s text is ``None`` then this will set the ``node``'s text
     to ``string``.
     """
 
-    if string is None:
+    if not string:
         return
     node.text = f"{node.text or ''}{string}"
 
 
 def extend_tail(node, string):
     """
-    Extend the ``node``'s tail with ``string`` (unless it's ``None``).
+    Append ``string`` to the ``node``'s tail (unless it's ``None`` or ``""``).
 
     If the ``node``'s tail is ``None`` then this will set the ``node``'s tail
     to ``string``.
     """
 
-    if string is None:
+    if not string:
         return
     node.tail = f"{node.tail or ''}{string}"
