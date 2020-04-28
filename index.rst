@@ -10,14 +10,13 @@ Welcome to Aerate's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-.. autocfunction:: vector_at
+.. c:function:: void test(void)
 
+   Some stuff
 
-..
-  .. automodule:: aerate.mutation
+   .. rubric:: The title **with** :c:func:`test`
 
-  .. autoclass:: MutationCursor
-    :members:
+   Blah
 
 
 Indices and tables

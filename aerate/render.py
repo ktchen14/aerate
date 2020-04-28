@@ -122,35 +122,30 @@ subscript_renderer = InlineRenderer(":subscript:`", "`")
 superscript_renderer = InlineRenderer(":superscript:`", "`")
 
 
+# The simplesect's kind must be "see", "return", "author", "authors",
+# "version", "since", "date", "note", "warning", "pre", "post", "copyright",
+# "invariant", "remark", "attention", "par", or "rcs"
+
 @engine.rule("simplesect", when=lambda node: node.get("kind") == "return")
 def render_simplesect_return(self, node, before=""):
     prefix = ":return: "
-    description_output = textwrap.indent(render_simplesect(self, node, before), " " * len(prefix)).strip()
-    return prefix + description_output + "\n\n"
+    output = render_simplesect(self, node, before)
+    output = textwrap.indent(output, " " * len(prefix)).strip()
+    return prefix + output + "\n\n"
+
+@engine.rule("simplesect", when=lambda node: node.get("kind") in {
+    "attention", "note", "warning"})
+def render_simplesect_admonition(self, node, before=""):
+    prefix = f".. {node.get('kind')}::"
+    output = render_simplesect(self, node, before)
+    output = textwrap.indent(output, " " * 3)
+    return prefix + "\n\n" + output + "\n\n"
 
 @engine.rule("simplesect")
 def render_simplesect(self, node, before=""):
-    # Must be "see", "return", "author", "authors", "version", "since", "date",
-    # "note", "warning", "pre", "post", "copyright", "invariant", "remark",
-    # "attention", "par", or "rcs"
-    kind = node.get("kind")
-
-    if kind == "attention":
-        prefix = ".. attention::"
-    elif kind == "note":
-        prefix = ".. note::"
-    elif kind == "warning":
-        prefix = ".. warning::"
-    else:
-        prefix = None
-
     output = "\n\n".join(
         self.handle(para) for para in node.iterchildren("para")
     ) + "\n\n"
-
-    if prefix is not None:
-        output = prefix + "\n\n" + textwrap.indent(output, " " * 3)
-
     return output
 
 @engine.rule("ref", within="para")
