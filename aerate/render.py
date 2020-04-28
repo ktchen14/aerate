@@ -135,6 +135,7 @@ def render_simplesect_return(self, node, before=""):
     output = textwrap.indent(output, " " * len(prefix)).strip()
     return prefix + output + "\n\n"
 
+
 @renderer.rule("simplesect", when=lambda node: node.get("kind") in {
     "attention", "note", "warning"})
 def render_simplesect_admonition(self, node, before=""):
