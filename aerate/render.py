@@ -1,4 +1,3 @@
-import re
 import textwrap
 import unicodedata
 
@@ -9,57 +8,24 @@ render_engine = engine = RenderEngine()
 
 
 class InlineRenderer:
-    prefix: str
-    suffix: str
+    def __init__(self, prefix, suffix=None):
+        self.prefix = prefix
+        self.suffix = suffix if suffix is not None else prefix
 
-    def escape_head(node, before=""):
-        last = before[-1:]
+    @staticmethod
+    def escape_head(node, before):
+        # Inline markup start-strings must start a text block or be immediately
+        # preceded by whitespace, one of the ASCII characters:
+        #   - : / ' " < ( [ {
+        # Or a similar non-ASCII punctuation character from Unicode categories
+        # Ps (Open), Pi (Initial quote), Pf (Final quote), Pd (Dash), or Po
+        # (Other)
 
-        if not last or last.isspace() or last in {"-", ":", "/"}:
+        if not before or before.isspace() or before in {"-", ":", "/"}:
             return False
 
-        if last == "'" and node.text[0] != "'":
+        if unicodedata.category(before) in {"Pd", "Po"}:
             return False
-
-        if last == '"' and node.text[0] != '"':
-            return False
-
-        if last == "<" and node.text[0] != ">":
-            return False
-
-        if last == "(" and node.text[0] != ")":
-            return False
-
-        if last == "[" and node.text[0] != "]":
-            return False
-
-        if last == "{" and node.text[0] != "}":
-            return False
-
-        last_category = unicodedata.category(last)
-
-        if unicodedata.category(last) in {"Pd", "Po"}:
-            return False
-
-        text_category = unicodedata.category(node.text[0])
-
-        if last_category in {"Ps", "Pi", "Pf"} and text_category not in {"Pe", "Pi", "Pf"}:
-            return False
-
-        return True
-
-    @classmethod
-    def render(cls, node, before=""):
-        # The inline markup end-string must be separated by at least one
-        # character from the start-string.
-
-        # Inline markup start-strings must be immediately followed by
-        # non-whitespace. Inline markup end-strings must be immediately
-        # preceded by non-whitespace.
-
-        # Handled by trim_inline() + remove_null_inline() in canonicalization
-
-        output = f"{cls.prefix}{node.text}{cls.suffix}"
 
         # If an inline markup start-string is immediately preceded by one of
         # the ASCII characters:
@@ -72,69 +38,78 @@ class InlineRenderer:
         # Pi (Initial quote), or Pf (Final quote). For quotes, matching
         # characters can be any of the quotation marks in international usage.
 
-        # Inline markup start-strings must start a text block or be immediately
-        # preceded by whitespace, one of the ASCII characters:
-        #   - : / ' " < ( [ {
-        # Or a similar non-ASCII punctuation character from Unicode categories
-        # Ps (Open), Pi (Initial quote), Pf (Final quote), Pd (Dash), or Po
-        # (Other)
-        last = before[-1:]
+        if before == "'" and node.text[0] != "'":
+            return False
 
-        if not last or last.isspace() or last in {"-", ":", "/"}:
-            pass
-        elif unicodedata.category(last) in {"Pd", "Po"}:
-            pass
-        elif last == "'" and node.text[0] != "'":
-            pass
-        elif last == '"' and node.text[0] != '"':
-            pass
-        elif last == "<" and node.text[0] != ">":
-            pass
-        elif last == "(" and node.text[0] != ")":
-            pass
-        elif last == "[" and node.text[0] != "]":
-            pass
-        elif last == "{" and node.text[0] != "}":
-            pass
-        elif unicodedata.category(last) in {"Ps", "Pi", "Pf"} and \
-                unicodedata.category(node.text[0]) not in {"Pe", "Pi", "Pf"}:
-            pass
-        else:
-            output = f"\\ {output}"
+        if before == '"' and node.text[0] != '"':
+            return False
 
+        if before == "<" and node.text[0] != ">":
+            return False
+
+        if before == "(" and node.text[0] != ")":
+            return False
+
+        if before == "[" and node.text[0] != "]":
+            return False
+
+        if before == "{" and node.text[0] != "}":
+            return False
+
+        if unicodedata.category(before) in {"Ps", "Pi", "Pf"}:
+            if unicodedata.category(node.text[0]) not in {"Pe", "Pi", "Pf"}:
+                return False
+
+        return True
+
+    @staticmethod
+    def escape_tail(node):
         # Inline markup end-strings must end a text block or be immediately
         # followed by whitespace, one of the ASCII characters:
         #   - . , : ; ! ? \ / ' " ) ] } >
         # Or a similar non-ASCII punctuation character from Unicode categories
         # Pe (Close), Pi (Initial quote), Pf (Final quote), Pd (Dash), or Po
         # (Other).
-        next = node.tail[:1]
-        if not next or next.isspace():
-            output = f"{output}{node.tail}"
-        elif next in ["-", ".", ",", ":", ";", "!", "?", "\\", "/", "'", '"',
-                      ")", "]", "}", ">"]:
-            output = f"{output}{node.tail}"
-        elif unicodedata.category(next) in ["Pe", "Pi", "Pf", "Pd", "Po"]:
-            output = f"{output}{node.tail}"
-        else:
-            output = f"{output}\\{node.tail}"
+        follow = node.tail[:1]
 
-        return f"{output}"
+        # If an inline markup node follows this node then we'll handle the
+        # escape in its renderer
+        if not follow or follow.isspace():
+            return False
+
+        if follow in {"-", ".", ",", ":", ";", "!", "?", "\\", "/", "'", '"',
+                      ")", "]", "}", ">"}:
+            return False
+
+        if unicodedata.category(follow) in {"Pe", "Pi", "Pf", "Pd", "Po"}:
+            return False
+
+        return True
+
+    def render(self, node, buffer=""):
+        # The inline markup end-string must be separated by at least one
+        # character from the start-string.
+
+        # Inline markup start-strings must be immediately followed by
+        # non-whitespace. Inline markup end-strings must be immediately
+        # preceded by non-whitespace.
+
+        # Handled by trim_inline, remove_null_inline in canonicalization
+
+        output = f"{self.prefix}{node.text}{self.suffix}"
+
+        if self.escape_head(node, buffer[-1:]):
+            output = f"\\ {output}"
+
+        if self.escape_tail(node):
+            output = f"{output}\\"
+
+        return f"{output}{node.tail or ''}"
 
 
-class BoldRenderer(InlineRenderer):
-    prefix = "**"
-    suffix = "**"
-
-
-class EmphasisRenderer(InlineRenderer):
-    prefix = "*"
-    suffix = "*"
-
-
-class ComputerOutputRenderer(InlineRenderer):
-    prefix = "``"
-    suffix = "``"
+bold_renderer = InlineRenderer("**")
+computer_output_renderer = InlineRenderer("``")
+emphasis_renderer = InlineRenderer("*")
 
 
 @engine.rule("simplesect", when=lambda node: node.get("kind") == "return")
@@ -192,17 +167,17 @@ def render_programlisting(self, node, before=""):
 
 @engine.rule("bold")
 def render_bold(self, node, before=""):
-    return BoldRenderer().render(node, before)
+    return bold_renderer.render(node, before)
 
 
 @engine.rule("computeroutput")
 def render_computeroutput(self, node, before=""):
-    return ComputerOutputRenderer().render(node, before)
+    return computer_output_renderer.render(node, before)
 
 
 @engine.rule("emphasis")
 def render_emphasis(self, node, before=""):
-    return EmphasisRenderer().render(node, before)
+    return emphasis_renderer.render(node, before)
 
 
 @engine.rule("para")
