@@ -4,10 +4,10 @@ import textwrap
 import unicodedata
 
 from aerate.index import Index
+from aerate.rule import RenderEngine
+from aerate.schema import DESCRIPTION_TAGS, SchemaError
 
-
-SCRIPT_ROOT = os.path.dirname(os.path.realpath(__file__))
-# object_index = Index(os.path.join(SCRIPT_ROOT, "..", "xml"))
+render_engine = engine = RenderEngine()
 
 
 class InlineRenderer:
@@ -93,19 +93,18 @@ class ComputerOutputRenderer(InlineRenderer):
     prefix = "``"
     suffix = "``"
 
-def render_simplesect_return(node, before=""):
+@engine.rule("simplesect", when=lambda node: node.get("kind") == "return")
+def render_simplesect_return(self, node, before=""):
     prefix = ":return: "
-    description_output = textwrap.indent(render_description(node), " " * len(prefix)).strip()
+    description_output = textwrap.indent(render_simplesect(self, node, before), " " * len(prefix)).strip()
     return prefix + description_output + "\n\n"
 
-def render_simplesect(node, before=""):
+@engine.rule("simplesect")
+def render_simplesect(self, node, before=""):
     # Must be "see", "return", "author", "authors", "version", "since", "date",
     # "note", "warning", "pre", "post", "copyright", "invariant", "remark",
     # "attention", "par", or "rcs"
     kind = node.get("kind")
-
-    if kind == "return":
-        return render_simplesect_return(node, before)
 
     if kind == "attention":
         prefix = ".. attention::"
@@ -117,7 +116,7 @@ def render_simplesect(node, before=""):
         prefix = None
 
     output = "\n\n".join(
-        render_para(para) for para in node.iterchildren("para")
+        self.handle(para) for para in node.iterchildren("para")
     ) + "\n\n"
 
     if prefix is not None:
@@ -138,41 +137,15 @@ def render_ref(node, before=""):
 
     return f"{node.text}{node.tail}"
 
-def render_programlisting(node, before=""):
+@engine.rule("programlisting")
+def render_programlisting(self, node, before=""):
     prefix = ".. code-block:: c\n\n"
-
-    output = []
-    for codeline in node.iterchildren("codeline"):
-        output.append(codeline.xpath("string()"))
-    return prefix + textwrap.indent("\n".join(output), " " * 3) + "\n\n"
+    output = "\n".join(self.handle(item) for item in node)
+    return prefix + textwrap.indent(output, " " * 3)
 
 
-def render_parameterlist(node, before=""):
-    if node.get("kind") != "param":
-        return ""
-
-    total_output = ""
-    for item in node.iterchildren():
-        (name,) = item.xpath("./parameternamelist/parametername")
-        (description,) = item.xpath("./parameterdescription")
-
-        output = f":param {name.text}: "
-        description_output = render_description(description)
-
-        output += textwrap.indent(description_output, " " * len(output)).strip()
-        total_output += "\n" + output
-    return total_output + "\n\n"
-
-def render_description(description_node, before=""):
-    output = []
-    for node in description_node:
-        if node.tag != "para":
-            raise NotImplementedError(f"Can't handle <{node.tag}> in <{description_node.tag}>")
-        para_output = render_para(node)
-        output.append(para_output.rstrip())
-    return "\n\n".join(output) + "\n\n"
-
-def render_para(node):
+@engine.rule("para")
+def render_para(self, node, before=""):
     output = node.text or ""
     for item in node.iterchildren():
         if item.tag == "bold":
@@ -182,11 +155,36 @@ def render_para(node):
         if item.tag == "computeroutput":
             output += ComputerOutputRenderer.render(item, output)
         if item.tag == "simplesect":
-            output += render_simplesect(item, output)
+            output += self.handle(item, output)
         if item.tag == "programlisting":
-            output += render_programlisting(item, output)
+            output += self.handle(item, output)
         if item.tag == "parameterlist":
             output += render_parameterlist(item, output)
         if item.tag == "ref":
             output += render_ref(item, output)
-    return output
+    return output + "\n\n"
+
+
+@engine.rule("parameterlist", when=lambda node: node.get("kind") == "param")
+def render_parameterlist(self, node, before=""):
+    total_output = ""
+    for item in node:
+        (name,) = item.xpath("./parameternamelist/parametername")
+        (description,) = item.xpath("./parameterdescription")
+
+        output = f":param {name.text}: "
+        description_output = self.render(description)
+
+        output += textwrap.indent(description_output, " " * len(output)).strip()
+        total_output += "\n" + output
+    return total_output + "\n\n"
+
+
+@engine.rule(*DESCRIPTION_TAGS)
+def render_description(self, node, before=""):
+    output = []
+    for item in node:
+        if item.tag != "para":
+            raise SchemaError(f"Can't handle <{item.tag}> in <{node.tag}>")
+        output.append(self.handle(item).rstrip())
+    return "\n\n".join(output)

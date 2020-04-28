@@ -110,3 +110,38 @@ class RuleEngine:
             return function
 
         return decorator(function) if function else decorator
+
+
+class RenderEngine:
+    def __init__(self):
+        self.algorithm = []
+
+    def handle(self, node, before=""):
+        for rule in self.algorithm:
+            if rule.accept(node):
+                return rule.handle(node, before)
+        return node.xpath("string()")
+
+    def rule(self, *tags, before=None, within=None, **kwargs):
+        """Define a rule on this engine."""
+
+        function = None
+
+        # Handle if this decorator is used without an explicit argument list
+        if len(tags) == 1 and callable(tags[0]) \
+                and before is None \
+                and within is None \
+                and not kwargs:
+            function, *tags = tags
+
+        if within is not None:
+            if isinstance(within, str):
+                within = [within]
+            within = frozenset(within)
+
+        def decorator(function):
+            rule = Rule(function, self, tags=tags, within=within, **kwargs)
+            self.algorithm.append(rule)
+            return function
+
+        return decorator(function) if function else decorator
