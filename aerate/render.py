@@ -104,7 +104,7 @@ class InlineRenderer:
         # non-whitespace. Inline markup end-strings must be immediately
         # preceded by non-whitespace.
 
-        # Handled by trim_inline, remove_null_inline in canonicalization
+        # Handled by trim_inline(), remove_null_inline() in the adjuster
 
         output = f"{self.prefix}{node.text}{self.suffix}"
 
