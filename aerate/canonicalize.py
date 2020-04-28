@@ -76,19 +76,19 @@ def absorb_identical_simplesect(self, cursor):
 
 
 @engine.rule(*INLINE_TAGS, unless=lambda node: node.text or len(node))
-def remove_null_inline_node(self, cursor):
+def remove_null_inline(self, cursor):
     """Remove an inline markup node with no text or children."""
     return cursor.remove()
 
 
 @engine.rule("htmlonly", "manonly", "rtfonly", "latexonly", "docbookonly")
-def remove_unused_inline_node(self, cursor):
+def remove_unused_inline(self, cursor):
     """Remove a ``only`` node unless it's ``xmlonly``."""
     return cursor.remove()
 
 
 @engine.rule(*INLINE_TAGS, when="./*")
-def lift_nested_inline_node(self, cursor):
+def lift_nested_inline(self, cursor):
     """Lift an inline markup node inside an inline markup node."""
     if not is_inline(cursor.node[0]):
         raise NotImplementedError(
