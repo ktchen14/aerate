@@ -4,7 +4,9 @@ import unicodedata
 from aerate.rule import RenderEngine
 from aerate.schema import DESCRIPTION_TAGS, SchemaError
 
-render_engine = engine = RenderEngine()
+__all__ = ("renderer",)
+
+renderer = RenderEngine()
 
 
 class InlineRenderer:
@@ -126,14 +128,14 @@ superscript_renderer = InlineRenderer(":superscript:`", "`")
 # "version", "since", "date", "note", "warning", "pre", "post", "copyright",
 # "invariant", "remark", "attention", "par", or "rcs"
 
-@engine.rule("simplesect", when=lambda node: node.get("kind") == "return")
+@renderer.rule("simplesect", when=lambda node: node.get("kind") == "return")
 def render_simplesect_return(self, node, before=""):
     prefix = ":return: "
     output = render_simplesect(self, node, before)
     output = textwrap.indent(output, " " * len(prefix)).strip()
     return prefix + output + "\n\n"
 
-@engine.rule("simplesect", when=lambda node: node.get("kind") in {
+@renderer.rule("simplesect", when=lambda node: node.get("kind") in {
     "attention", "note", "warning"})
 def render_simplesect_admonition(self, node, before=""):
     prefix = f".. {node.get('kind')}::"
@@ -142,7 +144,7 @@ def render_simplesect_admonition(self, node, before=""):
     return prefix + "\n\n" + output + "\n\n"
 
 
-@engine.rule("simplesect")
+@renderer.rule("simplesect")
 def render_simplesect(self, node, before=""):
     output = "\n\n".join(
         self.handle(para) for para in node.iterchildren("para")
@@ -150,7 +152,7 @@ def render_simplesect(self, node, before=""):
     return output
 
 
-@engine.rule("ref", within="para")
+@renderer.rule("ref", within="para")
 def render_ref(self, node, before=""):
     refid = node.attrib["refid"]
 
@@ -165,39 +167,39 @@ def render_ref(self, node, before=""):
     return f"{node.text}{node.tail}"
 
 
-@engine.rule("programlisting")
+@renderer.rule("programlisting")
 def render_programlisting(self, node, before=""):
     prefix = ".. code-block:: c\n\n"
     output = "\n".join(self.handle(item) for item in node)
     return prefix + textwrap.indent(output, " " * 3)
 
 
-@engine.rule("bold")
+@renderer.rule("bold")
 def render_bold(self, node, before=""):
     return bold_renderer.render(node, before)
 
 
-@engine.rule("emphasis")
+@renderer.rule("emphasis")
 def render_emphasis(self, node, before=""):
     return emphasis_renderer.render(node, before)
 
 
-@engine.rule("computeroutput")
+@renderer.rule("computeroutput")
 def render_computeroutput(self, node, before=""):
     return computeroutput_renderer.render(node, before)
 
 
-@engine.rule("subscript")
+@renderer.rule("subscript")
 def render_subscript(self, node, before=""):
     return subscript_renderer.render(node, before)
 
 
-@engine.rule("superscript")
+@renderer.rule("superscript")
 def render_superscript(self, node, before=""):
     return superscript_renderer.render(node, before)
 
 
-@engine.rule("para")
+@renderer.rule("para")
 def render_para(self, node, before=""):
     output = node.text or ""
     for item in node:
@@ -205,7 +207,7 @@ def render_para(self, node, before=""):
     return output + "\n\n"
 
 
-@engine.rule("parameterlist", when=lambda node: node.get("kind") == "param")
+@renderer.rule("parameterlist", when=lambda node: node.get("kind") == "param")
 def render_parameterlist(self, node, before=""):
     total_output = ""
     for item in node:
@@ -220,7 +222,7 @@ def render_parameterlist(self, node, before=""):
     return total_output + "\n\n"
 
 
-@engine.rule(*DESCRIPTION_TAGS)
+@renderer.rule(*DESCRIPTION_TAGS)
 def render_description(self, node, before=""):
     output = []
     for item in node:
