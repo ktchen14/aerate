@@ -1,6 +1,5 @@
 from lxml import etree
 import os
-import textwrap
 
 from aerate.adjust import adjuster
 from aerate.render import renderer
