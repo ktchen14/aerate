@@ -200,7 +200,7 @@ def render_superscript(self, node, before=""):
 
 
 @renderer.rule("para")
-def render_para(self, node, before=""):
+def render_para(self, node, buffer=""):
     output = node.text or ""
     for item in node:
         output += self.handle(item, output)
@@ -245,6 +245,10 @@ def render_function_definition(self, node, buffer=""):
 
     (detaileddescription,) = node.xpath("./detaileddescription")
     description_output = self.handle(detaileddescription)
+    output += textwrap.indent(description_output, " " * 3) + "\n\n"
+
+    (inbodydescription,) = node.xpath("./inbodydescription")
+    description_output = self.handle(inbodydescription)
     output += textwrap.indent(description_output, " " * 3) + "\n\n"
 
     return output
