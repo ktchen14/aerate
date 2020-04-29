@@ -5,7 +5,7 @@ from lxml import etree
 from lxml.etree import XMLParser
 
 
-class DocumentableObject:
+class Aeration:
     def __init__(self, index, index_node):
         self.index = index
         self.index_node = index_node
@@ -81,7 +81,7 @@ class Index:
             raise KeyError(repr(id))
         elif len(result) > 1:
             result = result[0]
-        return DocumentableObject(self, result)
+        return Aeration(self, result)
 
     def find_module_by_name(self, name):
         result = self.document.xpath(r'//compound[name/text()=$name]',
@@ -92,12 +92,12 @@ class Index:
             pass
             # raise KeyError(repr(name))
 
-        return DocumentableObject(self, result[0])
+        return Aeration(self, result[0])
 
     def find_member_by_name(self, name, module=None):
         if module is None:
             search_root = self.document
-        elif not isinstance(module, DocumentableObject):
+        elif not isinstance(module, Aeration):
             search_root = self.find_module_by_name(module).index_node
         else:
             search_root = module.index_node
@@ -110,4 +110,4 @@ class Index:
             pass
             # raise KeyError(repr(name))
 
-        return DocumentableObject(self, result[0])
+        return Aeration(self, result[0])

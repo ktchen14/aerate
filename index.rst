@@ -15,6 +15,7 @@ Welcome to Aerate's documentation!
    Some stuff
 
    .. rubric:: The title **with** :c:func:`test`
+      :class: test
 
    Blah
 
