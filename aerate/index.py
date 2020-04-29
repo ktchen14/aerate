@@ -6,8 +6,8 @@ from lxml.etree import XMLParser
 
 
 class Aeration:
-    def __init__(self, index, index_node):
-        self.index = index
+    def __init__(self, aerate, index_node):
+        self.aerate = aerate
         self.index_node = index_node
         self._node = None
 
@@ -23,24 +23,52 @@ class Aeration:
     def kind(self):
         return self.index_node.attrib["kind"]
 
+    def render(self, *args, **kwargs):
+        return self.aerate.render(self, *args, **kwargs)
+
+
+class CompoundAeration(Aeration):
     @property
     def node(self):
+        """Return the definition node associated with the aeration."""
+
         if self._node is None:
-            compound_node = self.index_node
-            if self.index_node.tag == "member":
-                compound_node = compound_node.getparent()
+            document = self.aerate.load_document(self.id + ".xml")
+            result = document.xpath(r'//compounddef[@id=$id]', id=self.id)
 
-            relative_path = compound_node.attrib["refid"] + ".xml"
+            if len(result) > 1:
+                raise LookupError(f"More than one <compounddef> with id {self.id!r} in {file!r}")
+            if not result:
+                raise LookupError(f"No <compounddef> with id {self.id!r} in {file!r}")
 
-            document = self.index.load_document(relative_path)
-            if self.index_node.tag == "compound":
-                result = document.xpath(r'//compounddef[@id=$refid and @kind=$kind]',
-                                        refid=self.id, kind=self.kind)
-            elif self.index_node.tag == "member":
-                result = document.xpath(r'//memberdef[@id=$refid and @kind=$kind]',
-                                        refid=self.id, kind=self.kind)
             self._node = result[0]
         return self._node
+
+
+class MemberAeration(Aeration):
+    @property
+    def node(self):
+        """Return the definition node associated with the aeration."""
+
+        if self._node is None:
+            file = self.index_node.getparent().attrib["refid"] + ".xml"
+            document = self.aerate.load_document(file)
+            result = document.xpath(r'//memberdef[@id=$id]', id=self.id)
+
+            if len(result) > 1:
+                raise LookupError(f"More than one <memberdef> with id {self.id!r} in {file!r}")
+            if not result:
+                raise LookupError(f"No <memberdef> with id {self.id!r} in {file!r}")
+
+            self._node = result[0]
+        return self._node
+
+
+def make_aeration(aerate, node):
+    if node.tag == "compound":
+        return CompoundAeration(aerate, node)
+    if node.tag == "member":
+        return MemberAeration(aerate, node)
 
 
 class Index:
@@ -54,6 +82,8 @@ class Index:
                                 remove_pis=True,
                                 strip_cdata=True)
         self.document = etree.parse(index_path, self.parser)
+
+        self.aeration_memo = {}
         self.document_memo = {"index.xml": self.document}
 
     def load_document(self, name):
@@ -63,25 +93,20 @@ class Index:
             self.document_memo[name] = document
         return self.document_memo[name]
 
-    def find(self, kind, id):
-        # kind must be either "compound" or "member"
-        if kind == "compound":
-            result = self.document.xpath("//compound[@refid=$refid]", refid=id)
-            if len(result) > 1:
-                result = result[0]
-        else:
-            result = self.document.xpath("//member[@refid=$refid]", refid=id)
-            if len(result) > 1:
-                result = result[0]
-        return result.get("kind"), result.xpath("./name")[0].text
-
     def find_by_id(self, id):
-        result = self.document.xpath("//*[@refid=$refid]", refid=id)
-        if not result:
-            raise KeyError(repr(id))
-        elif len(result) > 1:
-            result = result[0]
-        return Aeration(self, result)
+        """Find a documentable object from its id."""
+
+        if id not in self.aeration_memo:
+            result = self.document.xpath(
+                "//*[self::compound or self::member and @refid=$refid]",
+                refid=id)
+            if not result:
+                raise KeyError(repr(id))
+
+            # This is a lookup by id so all results should be identical
+            node = result[0]
+            self.aeration_memo[id] = make_aeration(self, node)
+        return self.aeration_memo[id]
 
     def find_module_by_name(self, name):
         result = self.document.xpath(r'//compound[name/text()=$name]',
@@ -92,7 +117,7 @@ class Index:
             pass
             # raise KeyError(repr(name))
 
-        return Aeration(self, result[0])
+        return make_aeration(self, result[0])
 
     def find_member_by_name(self, name, module=None):
         if module is None:
@@ -110,4 +135,4 @@ class Index:
             pass
             # raise KeyError(repr(name))
 
-        return Aeration(self, result[0])
+        return make_aeration(self, result[0])
