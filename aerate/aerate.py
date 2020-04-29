@@ -15,4 +15,4 @@ class Aerate:
         self.renderer.aerate = self
 
     def render(self, node, *args, **kwargs):
-        return self.renderer.render(node, *args, **kwargs)
+        return self.renderer.handle(node, *args, **kwargs)

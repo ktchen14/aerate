@@ -145,6 +145,14 @@ def render_simplesect_admonition(self, node, before=""):
     return prefix + "\n\n" + output + "\n\n"
 
 
+@renderer.rule("simplesect", when=lambda node: node.get("kind") == "see")
+def render_simplesect_admonition(self, node, before=""):
+    prefix = f".. seealso::"
+    output = render_simplesect(self, node, before)
+    output = textwrap.indent(output, " " * 3)
+    return prefix + "\n\n" + output + "\n\n"
+
+
 @renderer.rule("simplesect")
 def render_simplesect(self, node, before=""):
     output = "\n\n".join(

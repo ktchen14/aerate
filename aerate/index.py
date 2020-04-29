@@ -97,7 +97,7 @@ class Index:
 
         if id not in self.aeration_memo:
             result = self.document.xpath(
-                "//*[self::compound or self::member and @refid=$refid]",
+                "//*[(self::compound or self::member) and @refid=$refid]",
                 refid=id)
             if not result:
                 raise KeyError(repr(id))

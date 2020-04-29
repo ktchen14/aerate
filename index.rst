@@ -10,14 +10,16 @@ Welcome to Aerate's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-.. c:function:: void test(void)
+Vector Access
+-------------
 
-   Some stuff
+The functions in this section are used to access elements in a vector. Most of
+the time they're unnecessary as it's easier to use the normal pointer semantics
+of a vector to access elements.
 
-   .. rubric:: The title **with** :c:func:`test`
-      :class: test
+.. autocfunction:: vector_at
 
-   Blah
+.. autocfunction:: vector_index
 
 
 Indices and tables

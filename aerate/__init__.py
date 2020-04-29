@@ -1,6 +1,8 @@
+import os
 from sphinx.util import logging
 from typing import Any, Tuple, List
 
+from aerate.aerate import Aerate
 from sphinx.ext.autodoc import Documenter
 
 logger = logging.getLogger(__name__)
@@ -20,84 +22,47 @@ class FunctionDocumenter(Documenter):
 
     def format_name(self) -> str:
         """Format the name of *self.object*."""
-        return "void " + self.name + "()"
+
+        (definition,) = self.object.node.xpath("./definition")
+        (argsstring,) = self.object.node.xpath("./argsstring")
+        return definition.text + argsstring.text
 
     def resolve_name(self, modname: str, parents: Any, path: str, base: Any
                      ) -> Tuple[str, List[str]]:
         return base, []
 
     def import_object(self) -> bool:
+        """Import the object given by *self.modname* and *self.objpath* and set
+        it as *self.object*.
+
+        Returns True if successful, False if an error occurred.
+        """
+        self.object = self.env.app.aerate.index.find_member_by_name(self.modname)
+        self.env.app.aerate.adjuster.handle(self.object.node)
         return True
 
     def get_doc(self, *args, **kwargs) -> List[List[str]]:
-        from lxml import etree
-        import os
-        import re
         import textwrap
+        output = ""
 
-        from aerate.canonicalize import canonicalize_para
-        from aerate.mutation import MutationCursor
-        from aerate.render import render_para
+        (briefdescription,) = self.object.node.xpath("./briefdescription")
+        description_output = self.env.app.aerate.render(briefdescription)
+        output += description_output + "\n\n"
 
-        SCRIPT_ROOT = os.path.dirname(os.path.realpath(__file__))
+        (detaileddescription,) = self.object.node.xpath("./detaileddescription")
+        description_output = self.env.app.aerate.render(detaileddescription)
+        output += description_output + "\n\n"
 
-        actual_out = ""
+        (inbodydescription,) = self.object.node.xpath("./inbodydescription")
+        description_output = self.env.app.aerate.render(inbodydescription)
+        output += description_output + "\n\n"
 
-        with open(os.path.join(SCRIPT_ROOT, "..", "xml", "insert_8h.xml")) as file:
-            parser = etree.XMLParser(ns_clean=True,
-                                    remove_blank_text=True,
-                                    remove_comments=True,
-                                    remove_pis=True)
-            document = etree.parse(file, parser)
-
-        # for function in reversed(document.xpath(r'//memberdef[@kind="function"]')):
-        for function in document.xpath(r'//memberdef[@kind="function"]'):
-            (definition,) = function.xpath("./definition")
-            (argsstring,) = function.xpath("./argsstring")
-
-            # print(f".. c:function:: {definition.text}{argsstring.text}\n")
-
-            (briefdescription,) = function.xpath("./briefdescription")
-
-            output = []
-            for node in briefdescription:
-                if node.tag != "para":
-                    raise NotImplementedError(f"Can't handle <{node.tag}> in <briefdescription>")
-                para_output = render_para(node)
-                output.append(para_output.rstrip())
-            actual_out += "\n\n".join(output) + "\n\n"
-            # print(textwrap.indent("\n\n".join(output), " " * 3) + "\n\n")
-
-            (detaileddescription,) = function.xpath("./detaileddescription")
-            cursor = MutationCursor(detaileddescription).next()
-            while cursor:
-                if detaileddescription not in cursor.node.iterancestors():
-                    break
-
-                if cursor.node.tag != "para":
-                    raise NotImplementedError(f"Can't handle <{cursor.node.tag}> in <{cursor.root.tag}>")
-
-                canonicalize_para(cursor)
-
-            # from lxml import etree
-            # print(etree.tostring(detaileddescription, pretty_print=True).decode("utf-8"))
-            # break
-
-            output = []
-            for node in detaileddescription:
-                if node.tag != "para":
-                    raise NotImplementedError(f"Can't handle <{node.tag}> in <detaileddescription>")
-                para_output = render_para(node)
-                output.append(para_output.rstrip())
-            actual_out += "\n\n".join(output) + "\n\n"
-            # print(textwrap.indent("\n\n".join(output), " " * 3) + "\n\n")
-
-            return [actual_out.splitlines()]
+        return [output.splitlines()]
 
 
 def setup(application):
     application.add_autodocumenter(FunctionDocumenter)
-    application.aerate = None
+    application.aerate = Aerate(os.path.join(application.confdir, "xml"))
 
     return {
         'version': '0.1',
