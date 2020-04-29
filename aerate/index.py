@@ -65,10 +65,9 @@ class MemberAeration(Aeration):
 
 
 def make_aeration(aerate, node):
-    if node.tag == "compound":
-        return CompoundAeration(aerate, node)
-    if node.tag == "member":
-        return MemberAeration(aerate, node)
+    return {
+        "compound": CompoundAeration, "member": MemberAeration,
+    }[node.tag](aerate, node)
 
 
 class Index:
@@ -111,9 +110,11 @@ class Index:
     def find_module_by_name(self, name):
         result = self.document.xpath(r'//compound[name/text()=$name]',
                                      name=name)
+
         if not result:
             raise KeyError(repr(name))
-        elif len(result) > 1:
+
+        if len({node.attrib["refid"] for node in result}) > 1:
             pass
             # raise KeyError(repr(name))
 
