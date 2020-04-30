@@ -17,6 +17,10 @@ The functions in this section are used to access elements in a vector. Most of
 the time they're unnecessary as it's easier to use the normal pointer semantics
 of a vector to access elements.
 
+.. autoctype:: vector_c
+
+.. autocstruct:: __vector_header_t
+
 .. autocfunction:: vector_at
 
 .. autocfunction:: vector_index

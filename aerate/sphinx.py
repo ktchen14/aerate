@@ -4,39 +4,29 @@ from sphinx.ext.autodoc import Documenter
 from sphinx.util import logging
 from typing import Any, Tuple, List
 
-__all__ = ("FunctionDocumenter",)
+__all__ = ("FunctionDocumenter", "TypeDocumenter", "StructDocumenter")
 
 logger = logging.getLogger(__name__)
 
 
 class AerateDocumenter(Documenter):
+    aerationtype: str
     domain = "c"
+
+    @classmethod
+    def can_document_member(cls, member: Any, *args, **kwargs) -> bool:
+        return isinstance(member, Aeration) and member.kind == cls.aerationtype
 
     @property
     def aerate(self) -> Aerate:
         """The `Aerate` instance in the documenter's Sphinx application."""
         return self.env.app.aerate
 
-
-class FunctionDocumenter(AerateDocumenter):
-    objtype = "cfunction"
-    directivetype = "function"
-
-    @classmethod
-    def can_document_member(cls, member: Any, *args, **kwargs) -> bool:
-        return isinstance(member, Aeration)
-
-    def format_name(self) -> str:
-        (definition_node,) = self.object.node.xpath("./definition")
-        (argsstring_node,) = self.object.node.xpath("./argsstring")
-        return definition_node.text + argsstring_node.text
-
-    def resolve_name(self, modname: str, parents: Any, path: str, base: Any
-                     ) -> Tuple[str, List[str]]:
-        return base, []
-
     def import_object(self) -> bool:
         self.object = self.aerate.index.find_member_by_name(self.modname)
+        if self.object.kind != self.aerationtype:
+            logger.warning(f"auto{self.objtype} name must be a {self.aerationtype!r}")
+            return False
         self.aerate.adjuster.handle(self.object.node)
         return True
 
@@ -56,3 +46,47 @@ class FunctionDocumenter(AerateDocumenter):
         output += description_output + "\n\n"
 
         return [output.splitlines()]
+
+
+class FunctionDocumenter(AerateDocumenter):
+    aerationtype = "function"
+    objtype = "cfunction"
+    directivetype = "function"
+
+    def format_name(self) -> str:
+        (definition_node,) = self.object.node.xpath("./definition")
+        (argsstring_node,) = self.object.node.xpath("./argsstring")
+        return definition_node.text + argsstring_node.text
+
+    def resolve_name(self, modname: str, parents: Any, path: str, base: Any
+                     ) -> Tuple[str, List[str]]:
+        return base, []
+
+
+class TypeDocumenter(AerateDocumenter):
+    aerationtype = "typedef"
+    objtype = "ctype"
+    directivetype = "type"
+
+    def format_name(self) -> str:
+        (type_node,) = self.object.node.xpath("./type")
+        (name_node,) = self.object.node.xpath("./name")
+        return type_node.text + name_node.text
+
+    def resolve_name(self, modname: str, parents: Any, path: str, base: Any
+                     ) -> Tuple[str, List[str]]:
+        return base, []
+
+class StructDocumenter(AerateDocumenter):
+    aerationtype = "struct"
+    objtype = "cstruct"
+    directivetype = "struct"
+
+    def format_name(self) -> str:
+        (type_node,) = self.object.node.xpath("./type")
+        (name_node,) = self.object.node.xpath("./name")
+        return type_node.text + name_node.text
+
+    def resolve_name(self, modname: str, parents: Any, path: str, base: Any
+                     ) -> Tuple[str, List[str]]:
+        return base, []

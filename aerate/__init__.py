@@ -1,5 +1,5 @@
 from aerate.aerate import Aerate
-from aerate.sphinx import FunctionDocumenter
+from aerate.sphinx import *
 import os
 
 
@@ -14,5 +14,7 @@ def setup(sphinx):
 
     sphinx.aerate = Aerate(sphinx.config.aerate_doxygen_root)
     sphinx.add_autodocumenter(FunctionDocumenter)
+    sphinx.add_autodocumenter(TypeDocumenter)
+    sphinx.add_autodocumenter(StructDocumenter)
 
     return {"version": "0.0.1", "parallel_read_safe": True}
