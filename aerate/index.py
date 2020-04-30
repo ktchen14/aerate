@@ -6,6 +6,17 @@ from lxml.etree import XMLParser
 
 
 class Aeration:
+    """
+    An Aeration is a documentable object (either a "compound" or a "member").
+
+    Each aeration is associated with an *index_node* from `index.xml` a *node*
+    from the compound XML file that it's documented in.
+
+    The *index_node* of an aeration will be either a ``<compound>`` or a
+    ``<member>``. The *node* of an aeration will be either a ``<compounddef>``
+    or a ``<memberdef>``.
+    """
+
     def __init__(self, aerate, index_node):
         self.aerate = aerate
         self.index_node = index_node
