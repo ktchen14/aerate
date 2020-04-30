@@ -36,12 +36,6 @@ class FunctionDocumenter(AerateDocumenter):
         return base, []
 
     def import_object(self) -> bool:
-        """Import the object given by *self.modname* and *self.objpath* and set
-        it as *self.object*.
-
-        Returns True if successful, False if an error occurred.
-        """
-
         self.object = self.aerate.index.find_member_by_name(self.modname)
         self.aerate.adjuster.handle(self.object.node)
         return True

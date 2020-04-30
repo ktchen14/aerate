@@ -3,9 +3,9 @@ from aerate.sphinx import FunctionDocumenter
 import os
 
 
-def setup(application):
-    application.aerate = Aerate(os.path.join(application.confdir, "xml"))
-    application.add_autodocumenter(FunctionDocumenter)
+def setup(sphinx):
+    sphinx.aerate = Aerate(os.path.join(sphinx.confdir, "xml"))
+    sphinx.add_autodocumenter(FunctionDocumenter)
 
     return {
         'version': '0.1',
