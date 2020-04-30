@@ -13,7 +13,14 @@ class Rule:
         self.unless = unless
 
     def __repr__(self):
-        return f"<Rule {self.action.__name__} at {id(self):#x}>"
+        return f"<Rule {self.name} at {id(self):#x}>"
+
+    @property
+    def name(self):
+        """
+        The action's name, when available, or the name of the action's type.
+        """
+        return getattr(self.action, "__name__", type(self.action).__name__)
 
     @staticmethod
     def evaluate(test, node):
@@ -91,7 +98,7 @@ class Engine:
 
         function = None
 
-        # Handle if this decorator is used without an explicit argument list
+        # Handle a call without an explicit argument list
         if len(tags) == 1 and callable(tags[0]) \
                 and before is None \
                 and within is None \
