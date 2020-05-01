@@ -1,6 +1,7 @@
 from __future__ import annotations
+from aerate.engine import Engine
 
-__all__ = ("MutationCursor",)
+__all__ = ("MutationCursor", "MutationEngine")
 
 
 class MutationCursor:
@@ -309,3 +310,20 @@ def extend_tail(node, string):
     if not string:
         return
     node.tail = f"{node.tail or ''}{string}"
+
+
+class MutationEngine(Engine):
+    """An engine used to mutate a node tree."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.memo = {}
+
+    def iterrule(self, cursor):
+        return self.memo.setdefault(node, super().iterrule(cursor.node))
+
+    def on_unaccepted(self, cursor, *args, **kwargs):
+        return cursor.next()
+
+    def retrieve_node(self, cursor, *args, **kwargs):
+        return cursor.node
