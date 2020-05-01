@@ -87,79 +87,157 @@ class Rule:
 
 
 class Engine:
-    def __init__(self):
-        self.algorithm = []
+    """
+    A collection of :class:`Rule`\s.
 
-    def load_recipe(recipe):
+    In general an engine maintains a list of rules. When it's asked to handle a
+    node an engine will search through this list in order until it finds a rule
+    that accepts the node. It will then use this rule to handle the node,
+    returning the result of the rule's action.
+    """
+
+    def __init__(self):
+        self.script = []
+
+    def iterrule(self, node):
+        """Return an iterator through each rule that will accept the *node*."""
+        return (rule for rule in self.script if rule.accept(node))
+
+    def handle_unexpected(self, node, *args, **kwargs):
+        """Handle a *node* that isn't accepted by any rule in the engine."""
+        pass
+
+    def retrieve_node(self, node, *args, **kwargs):
+        """Return the node in a call with this signature to :meth:`handle`."""
+        return node
+
+    def handle(self, node, *args, **kwargs):
+        """Invoke the engine once."""
+
+        node = self.retrieve_node(node, *args, **kwargs)
+
+        for rule in self.iterrule(node):
+            result = rule(self, node, *args, **kwargs)
+            if result is NotImplemented:
+                continue
+            return result
+        return self.handle_unexpected(node, *args, **kwargs)
+
+    def load_recipe(self, recipe):
         exec(find_spec(recipe).loader.get_code(recipe), {"engine": self})
 
     def rule(self, *tags, before=None, within=None, **kwargs):
-        """Define a rule on this engine."""
+        """
+        A decorator to create and insert a rule into the engine.
 
-        function = None
+        The arguments to this decorator are sent to the rule :meth:`initializer
+        <Rule>` with some exceptions:
+
+        - If no *tags* are specified then the rule's *tags* will be ``None``.
+        - If *within* is a string then the rule's *within* will be a set
+            with that value as its only element.
+
+        Furthermore *before* is handled by this decorator to specify the
+        placement of the rule in the engine. If *before* is:
+
+        ``None`` or ``False``
+            the rule will be appended to the engine
+
+        ``True``, ``all``, or ``any``
+            it will be prepended to the engine
+
+        a :class:`Rule`
+            it's inserted in the engine before the specified rule
+
+        a callable
+            then it's inserted in the engine before the first rule with that
+            callable as its action
+
+        a string
+            then it's inserted int the engine before the first rule with that
+            :meth:`name <Rule.name>`
+        """
+
+        action = None
 
         # Handle a call without an explicit argument list
         if len(tags) == 1 and callable(tags[0]) \
                 and before is None \
                 and within is None \
                 and not kwargs:
-            function, *tags = tags
+            action, *tags = tags
+
+        tags = frozenset(tags) if tags else None
+
+        if before is None or before is False:
+            i = len(self.script)
+        elif before is True or before in (all, any):
+            i = 0
+        elif isinstance(before, Rule):
+            i = self.script.index(before)
+        elif callable(before):
+            i = [rule.action for rule in self.script].index(before)
+        elif isinstance(before, str):
+            i = [rule.name for rule in self.script].index(before)
+        else:
+            raise TypeError("unexpected type in rule() argument 'before': " +
+                            repr(type(before).__name__))
 
         if within is not None:
             if isinstance(within, str):
                 within = [within]
             within = frozenset(within)
 
-        def decorator(function):
-            rule = Rule(function, tags=tags, within=within, **kwargs)
-            self.algorithm.append(rule)
-            return function
+        def decorator(action):
+            rule = Rule(action, tags=tags, within=within, **kwargs)
+            self.script.insert(i, rule)
+            return action
 
-        return decorator(function) if function else decorator
+        return decorator(action) if action else decorator
 
 
-class Engine:
-    def __init__(self):
-        self.algorithm = []
-        self.memory = {}
+# class Engine:
+#     def __init__(self):
+#         self.algorithm = []
+#         self.memory = {}
 
-    def retrieve_rule(self, node):
-        for rule in self.algorithm:
-            if rule.accept(node):
-                return rule
+#     def retrieve_rule(self, node):
+#         for rule in self.algorithm:
+#             if rule.accept(node):
+#                 return rule
 
-    def handle_node(self, cursor):
-        rule = self.retrieve_rule(cursor.node)
-        if rule is None:
-            return cursor.next()
-        return rule(cursor.node)
+#     def handle_node(self, cursor):
+#         rule = self.retrieve_rule(cursor.node)
+#         if rule is None:
+#             return cursor.next()
+#         return rule(cursor.node)
 
-    def handle(self, root):
-        from aerate.mutation import MutationCursor
-        cursor = MutationCursor(root)
-        while cursor and (root == cursor.node or root in cursor.node.iterancestors()):
-            self.handle_node(cursor)
+#     def handle(self, root):
+#         from aerate.mutation import MutationCursor
+#         cursor = MutationCursor(root)
+#         while cursor and (root == cursor.node or root in cursor.node.iterancestors()):
+#             self.handle_node(cursor)
 
-    def rule(self, *tags, before=None, within=None, **kwargs):
-        """Define a rule on this engine."""
+#     def rule(self, *tags, before=None, within=None, **kwargs):
+#         """Define a rule on this engine."""
 
-        function = None
+#         function = None
 
-        # Handle if this decorator is used without an explicit argument list
-        if len(tags) == 1 and callable(tags[0]) \
-                and before is None \
-                and within is None \
-                and not kwargs:
-            function, *tags = tags
+#         # Handle if this decorator is used without an explicit argument list
+#         if len(tags) == 1 and callable(tags[0]) \
+#                 and before is None \
+#                 and within is None \
+#                 and not kwargs:
+#             function, *tags = tags
 
-        if within is not None:
-            if isinstance(within, str):
-                within = [within]
-            within = frozenset(within)
+#         if within is not None:
+#             if isinstance(within, str):
+#                 within = [within]
+#             within = frozenset(within)
 
-        def decorator(function):
-            rule = Rule(function, tags=tags, within=within, **kwargs)
-            self.algorithm.append(rule)
-            return function
+#         def decorator(function):
+#             rule = Rule(function, tags=tags, within=within, **kwargs)
+#             self.algorithm.append(rule)
+#             return function
 
-        return decorator(function) if function else decorator
+#         return decorator(function) if function else decorator
