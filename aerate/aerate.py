@@ -13,7 +13,7 @@ class Aerate:
 
         self.reformer = MutationEngine(self)
 
-        self.renderer = Engine(self)
+        self.renderer = Renderer(self)
         self.renderer.load_recipe("aerate.recipe.renderer")
 
     def render(self, node, *args, **kwargs):
