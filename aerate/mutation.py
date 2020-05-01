@@ -319,11 +319,16 @@ class MutationEngine(Engine):
         super().__init__(*args, **kwargs)
         self.memo = {}
 
-    def iterrule(self, cursor):
-        return self.memo.setdefault(node, super().iterrule(cursor.node))
+    def iterrule(self, node):
+        return self.memo.setdefault(node, super().iterrule(node))
 
     def on_unaccepted(self, cursor, *args, **kwargs):
         return cursor.next()
 
     def retrieve_node(self, cursor, *args, **kwargs):
         return cursor.node
+
+    def handle(self, root):
+        cursor = MutationCursor(root)
+        while cursor and (root == cursor.node or root in cursor.node.iterancestors()):
+            self.invoke(cursor)

@@ -150,7 +150,7 @@ def render_simplesect_admonition(self, node, before=""):
 @engine.rule("simplesect")
 def render_simplesect(self, node, before=""):
     output = "\n\n".join(
-        self.handle(para) for para in node.iterchildren("para")
+        self.invoke(para) for para in node.iterchildren("para")
     ) + "\n\n"
     return output
 
@@ -183,7 +183,7 @@ def render_ref(self, node, before=""):
 @engine.rule("programlisting")
 def render_programlisting(self, node, before=""):
     prefix = ".. code-block:: c\n\n"
-    output = "\n".join(self.handle(item) for item in node)
+    output = "\n".join(self.invoke(item) for item in node)
     return prefix + textwrap.indent(output, " " * 3)
 
 
@@ -216,7 +216,7 @@ def render_superscript(self, node, before=""):
 def render_para(self, node, buffer=""):
     output = node.text or ""
     for item in node:
-        output += self.handle(item, output)
+        output += self.invoke(item, output)
     return output + "\n\n"
 
 
@@ -228,7 +228,7 @@ def render_parameterlist(self, node, before=""):
         (description,) = item.xpath("./parameterdescription")
 
         output = f":param {name.text}: "
-        description_output = self.handle(description)
+        description_output = self.invoke(description)
 
         output += textwrap.indent(description_output, " " * len(output)).strip()
         total_output += "\n" + output
@@ -241,7 +241,7 @@ def render_description(self, node, before=""):
     for item in node:
         if item.tag != "para":
             raise SchemaError(f"Can't handle <{item.tag}> in <{node.tag}>")
-        output.append(self.handle(item).rstrip())
+        output.append(self.invoke(item).rstrip())
     return "\n\n".join(output)
 
 
@@ -253,15 +253,15 @@ def render_function_definition(self, node, buffer=""):
     output = f".. c:function:: {definition.text}{argsstring.text}\n\n"
 
     (briefdescription,) = node.xpath("./briefdescription")
-    description_output = self.handle(briefdescription)
+    description_output = self.invoke(briefdescription)
     output += textwrap.indent(description_output, " " * 3) + "\n\n"
 
     (detaileddescription,) = node.xpath("./detaileddescription")
-    description_output = self.handle(detaileddescription)
+    description_output = self.invoke(detaileddescription)
     output += textwrap.indent(description_output, " " * 3) + "\n\n"
 
     (inbodydescription,) = node.xpath("./inbodydescription")
-    description_output = self.handle(inbodydescription)
+    description_output = self.invoke(inbodydescription)
     output += textwrap.indent(description_output, " " * 3) + "\n\n"
 
     return output
@@ -275,15 +275,15 @@ def render_function_definition(self, node, buffer=""):
     output = f".. c:type:: {type_node.text} {name_node.text}\n\n"
 
     (briefdescription,) = node.xpath("./briefdescription")
-    description_output = self.handle(briefdescription)
+    description_output = self.invoke(briefdescription)
     output += textwrap.indent(description_output, " " * 3) + "\n\n"
 
     (detaileddescription,) = node.xpath("./detaileddescription")
-    description_output = self.handle(detaileddescription)
+    description_output = self.invoke(detaileddescription)
     output += textwrap.indent(description_output, " " * 3) + "\n\n"
 
     (inbodydescription,) = node.xpath("./inbodydescription")
-    description_output = self.handle(inbodydescription)
+    description_output = self.invoke(inbodydescription)
     output += textwrap.indent(description_output, " " * 3) + "\n\n"
 
     return output

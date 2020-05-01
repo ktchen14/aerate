@@ -1,8 +1,7 @@
-from aerate.adjust import adjuster
+from aerate.engine import Engine
 from aerate.index import Index
-from aerate.render import renderer
-
-from aerate.rule import RenderEngine, RuleEngine
+from aerate.mutation import MutationEngine
+from aerate.render import Renderer
 
 
 class Aerate:
@@ -10,11 +9,8 @@ class Aerate:
         self.index = Index(root)
         self.index.aerate = self
 
-        self.adjuster = adjuster
-        self.adjuster.aerate = self
-
-        self.renderer = renderer
-        self.renderer.aerate = self
+        self.adjuster = MutationEngine(self, recipe="aerate.recipe.adjuster")
+        self.renderer = Renderer(self)
 
     def render(self, node, *args, **kwargs):
-        return self.renderer.handle(node, *args, **kwargs)
+        return self.renderer.invoke(node, *args, **kwargs)
