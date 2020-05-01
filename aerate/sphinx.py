@@ -19,7 +19,7 @@ class AerateDocumenter(Documenter):
 
     @property
     def aerate(self) -> Aerate:
-        """The `Aerate` instance in the documenter's Sphinx application."""
+        """The :class:`Aerate` instance in the documenter's Sphinx application."""
         return self.env.app.aerate
 
     def import_object(self) -> bool:
