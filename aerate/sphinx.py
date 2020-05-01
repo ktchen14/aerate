@@ -1,5 +1,4 @@
-from aerate.aerate import Aerate
-from aerate.index import Aeration
+from aerate.aerate import Aerate, Aeration
 from sphinx.ext.autodoc import Documenter
 from sphinx.util import logging
 from typing import Any, Tuple, List
