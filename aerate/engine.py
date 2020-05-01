@@ -4,6 +4,13 @@ from importlib.util import find_spec
 class Rule:
     """A callable with criteria to decide if it should be called on a node."""
 
+    @staticmethod
+    def evaluate(test, node):
+        """
+        Evaluate *test* as a callable or XPath expression against the *node*.
+        """
+        return test(node) if callable(test) else node.xpath(test)
+
     def __init__(self, action, tags=None, within=None, when=None, unless=None):
         self.action = action
 
@@ -15,19 +22,15 @@ class Rule:
     def __repr__(self):
         return f"<Rule {self.name} at {id(self):#x}>"
 
+    def __call__(self, *args, **kwargs):
+        return self.action(*args, **kwargs)
+
     @property
     def name(self):
         """
         The action's name, when available, or the name of the action's type.
         """
         return getattr(self.action, "__name__", type(self.action).__name__)
-
-    @staticmethod
-    def evaluate(test, node):
-        """
-        Evaluate *test* as a callable or XPath expression against the *node*.
-        """
-        return test(node) if callable(test) else node.xpath(test)
 
     def accept(self, node):
         """
@@ -81,9 +84,6 @@ class Rule:
             return False
 
         return True
-
-    def __call__(self, *args, **kwargs):
-        return self.action(*args, **kwargs)
 
 
 class Engine:
