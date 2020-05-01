@@ -99,31 +99,50 @@ class Engine:
     def __init__(self):
         self.script = []
 
+    def invoke(self, *args, **kwargs):
+        """Invoke the engine to handle the *node*."""
+
+        node = self.retrieve_node(*args, **kwargs)
+
+        for rule in self.iterrule(node):
+            result = rule(self, *args, **kwargs)
+            if result is NotImplemented:
+                continue
+            return result
+        return self.on_unaccepted(*args, **kwargs)
+
     def iterrule(self, node):
         """Return an iterator through each rule that will accept the *node*."""
         return (rule for rule in self.script if rule.accept(node))
 
-    def handle_unexpected(self, node, *args, **kwargs):
+    def on_unaccepted(self, *args, **kwargs):
         """Handle a *node* that isn't accepted by any rule in the engine."""
         pass
 
     def retrieve_node(self, node, *args, **kwargs):
-        """Return the node in a call with this signature to :meth:`handle`."""
+        """
+        Return the node from a call to :meth:`invoke` with this signature.
+        """
         return node
 
-    def handle(self, node, *args, **kwargs):
-        """Invoke the engine once."""
-
-        node = self.retrieve_node(node, *args, **kwargs)
-
-        for rule in self.iterrule(node):
-            result = rule(self, node, *args, **kwargs)
-            if result is NotImplemented:
-                continue
-            return result
-        return self.handle_unexpected(node, *args, **kwargs)
-
     def load_recipe(self, recipe):
+        """
+        Load the *recipe* as a recipe file to initialize the engine's script.
+
+        The recipe file is looked up with the same method that'd be used to
+        import a module with name *recipe*. Note however that this file is
+        loaded with ``exec()`` rather than ``import``. Inside this file the
+        global variable *engine* is available to refer to the engine. A recipe
+        file should resemble::
+
+            @engine.rule("sample", when=lambda node: node.text)
+            def return_text(self, node, *args, **kwargs):
+                return node.text
+
+            @engine.rule("sample", when=lambda node: len(node))
+            def return_recursive(self, node, *args, **kwargs):
+                return "".join(self.invoke(item) for item in node)
+        """
         exec(find_spec(recipe).loader.get_code(recipe), {"engine": self})
 
     def rule(self, *tags, before=None, within=None, **kwargs):
@@ -196,48 +215,18 @@ class Engine:
         return decorator(action) if action else decorator
 
 
-# class Engine:
-#     def __init__(self):
-#         self.algorithm = []
-#         self.memory = {}
+class MutationEngine(Engine):
+    """An engine used to mutate a node tree."""
 
-#     def retrieve_rule(self, node):
-#         for rule in self.algorithm:
-#             if rule.accept(node):
-#                 return rule
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.memo = {}
 
-#     def handle_node(self, cursor):
-#         rule = self.retrieve_rule(cursor.node)
-#         if rule is None:
-#             return cursor.next()
-#         return rule(cursor.node)
+    def iterrule(self, cursor):
+        return self.memo.setdefault(node, super().iterrule(cursor.node))
 
-#     def handle(self, root):
-#         from aerate.mutation import MutationCursor
-#         cursor = MutationCursor(root)
-#         while cursor and (root == cursor.node or root in cursor.node.iterancestors()):
-#             self.handle_node(cursor)
+    def on_unaccepted(self, cursor, *args, **kwargs):
+        return cursor.next()
 
-#     def rule(self, *tags, before=None, within=None, **kwargs):
-#         """Define a rule on this engine."""
-
-#         function = None
-
-#         # Handle if this decorator is used without an explicit argument list
-#         if len(tags) == 1 and callable(tags[0]) \
-#                 and before is None \
-#                 and within is None \
-#                 and not kwargs:
-#             function, *tags = tags
-
-#         if within is not None:
-#             if isinstance(within, str):
-#                 within = [within]
-#             within = frozenset(within)
-
-#         def decorator(function):
-#             rule = Rule(function, tags=tags, within=within, **kwargs)
-#             self.algorithm.append(rule)
-#             return function
-
-#         return decorator(function) if function else decorator
+    def retrieve_node(self, cursor, *args, **kwargs):
+        return cursor.node
