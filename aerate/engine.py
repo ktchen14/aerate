@@ -134,7 +134,7 @@ class Engine:
 
 
 class Rule:
-    """A callable with criteria to decide if it should be called on a node."""
+    """An action with criteria to decide if it should be called on a node."""
 
     @staticmethod
     def evaluate(test, node):
