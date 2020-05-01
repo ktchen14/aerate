@@ -2,6 +2,8 @@ from aerate.adjust import adjuster
 from aerate.index import Index
 from aerate.render import renderer
 
+from aerate.rule import RenderEngine, RuleEngine
+
 
 class Aerate:
     def __init__(self, root):

@@ -10,6 +10,12 @@ Welcome to Aerate's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+.. autoclass:: aerate.engine.Rule
+   :members:
+
+.. autoclass:: aerate.engine.Engine
+   :members:
+
 Vector Access
 -------------
 
@@ -18,8 +24,6 @@ the time they're unnecessary as it's easier to use the normal pointer semantics
 of a vector to access elements.
 
 .. autoctype:: vector_c
-
-.. autocstruct:: __vector_header_t
 
 .. autocfunction:: vector_at
 
