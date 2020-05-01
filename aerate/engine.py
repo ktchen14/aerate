@@ -58,7 +58,7 @@ class Rule:
         If specified *unless* is like *when* except that its result must be
         ``False`` (or evaluate to ``False``) for the *node* to be accepted.
 
-        If some combination of these conditions are specified then the *node*
+        If some combination of these criteria are specified then the *node*
         isn't accepted unless all of them accept the *node*.
         """
 
