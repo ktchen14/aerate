@@ -13,12 +13,9 @@ class Engine:
     returning the result of the rule's action.
     """
 
-    def __init__(self, aerate, recipe=None):
+    def __init__(self, aerate):
         self.aerate = aerate
         self.script = []
-
-        if recipe is not None:
-            self.load_recipe(recipe)
 
     def invoke(self, *args, **kwargs):
         """Invoke the engine to handle the *node*."""

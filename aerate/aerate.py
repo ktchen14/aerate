@@ -8,9 +8,13 @@ class Aerate:
         self.index = Index(root)
         self.index.aerate = self
 
-        self.adjuster = MutationEngine(self, recipe="aerate.recipe.adjuster")
+        self.adjuster = MutationEngine(self)
+        self.adjuster.load_recipe("aerate.recipe.adjuster")
+
         self.reformer = MutationEngine(self)
-        self.renderer = Render(self)
+
+        self.renderer = Engine(self)
+        self.renderer.load_recipe("aerate.recipe.renderer")
 
     def render(self, node, *args, **kwargs):
         return self.renderer.invoke(node, *args, **kwargs)
