@@ -1,6 +1,7 @@
 ///@ file foo.c
 
-/// This is an ambiguous struct in foo.c
+/// This is an ambiguous struct in foo.c with a reference to
+/// ambiguous_function()
 struct ambiguous_struct {
   int member;
 };

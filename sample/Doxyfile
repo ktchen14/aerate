@@ -1,9 +1,5 @@
 # Doxyfile 1.8.20
 
-#---------------------------------------------------------------------------
-# Project related configuration options
-#---------------------------------------------------------------------------
-
 # The PROJECT_NAME tag is a single word (or a sequence of words surrounded by
 # double-quotes, unless you are using Doxywizard) that should identify the
 # project for which the documentation is generated. This name is used in the
@@ -23,9 +19,9 @@ OPTIMIZE_OUTPUT_FOR_C  = YES
 
 RECURSIVE              = YES
 
-#---------------------------------------------------------------------------
-# Configuration options related to the XML output
-#---------------------------------------------------------------------------
+# If the GENERATE_LATEX tag is set to YES, doxygen will generate LaTeX output.
+
+GENERATE_LATEX         = NO
 
 # If the GENERATE_XML tag is set to YES, doxygen will generate an XML file that
 # captures the structure of the code including all documentation.
