@@ -1,4 +1,4 @@
-///@ file foo.c
+/// @file foo.c
 
 /// This is an ambiguous struct in foo.c
 struct ambiguous_struct {
