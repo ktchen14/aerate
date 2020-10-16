@@ -1,13 +1,14 @@
 from aerate.aerate import Aerate
-from aerate.sphinx import *
+from aerate.sphinx import FunctionDocumenter, TypeDocumenter, StructDocumenter
 import os
 
 
 def setup(sphinx):
     sphinx.setup_extension("sphinx.ext.autodoc")
 
-    # The directory where Doxygen's XML output is. This should be the same as
-    # the XML_OUTPUT configuration option in Doxygen.
+    # The location of the XML output from Doxygen (should be the same as the
+    # XML_OUTPUT option in Doxygen). The default is an "xml" subdirectory in
+    # the directory containing the Sphinx configuration file (`conf.py`).
     sphinx.add_config_value("aerate_doxygen_root",
                             os.path.join(sphinx.confdir, "xml"),
                             "env")
