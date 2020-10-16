@@ -1,4 +1,5 @@
 from aerate.aerate import Aerate, Aeration
+from docutils.parsers.rst import directives
 from sphinx.ext.autodoc import Documenter
 from sphinx.util import logging
 from typing import Any, Tuple, List
@@ -8,84 +9,97 @@ __all__ = ("FunctionDocumenter", "TypeDocumenter", "StructDocumenter")
 logger = logging.getLogger(__name__)
 
 
-class AerateDocumenter(Documenter):
+class AerationDocumenter(Documenter):
+    """Specialized, abstract Documenter subclass for an `Aeration`."""
+
+    # The "kind" of aeration to be handled by a subclass of this documenter
     aerationtype: str
+
     domain = "c"
 
     @classmethod
     def can_document_member(cls, member: Any, *args, **kwargs) -> bool:
-        return isinstance(member, Aeration) and member.kind == cls.aerationtype
+        """Subclasses should only document a specific "kind" of Aeration."""
+        if not isinstance(member, Aeration):
+            return False
+        return member.kind == cls.aerationtype
 
     @property
     def aerate(self) -> Aerate:
-        """The :class:`Aerate` instance in the documenter's Sphinx application."""
+        """The `Aerate` instance in the documenter's Sphinx application."""
         return self.env.app.aerate
 
     def import_object(self) -> bool:
-        self.object = self.aerate.index.find_member_by_name(self.modname)
+        """Set *self.object* to be the `Aeration` to be documented."""
+
+        self.object = self.aerate.find_member_by_name(self.modname)
         if self.object.kind != self.aerationtype:
-            logger.warning(f"auto{self.objtype} name must be a {self.aerationtype!r}")
+            logger.warning(f"auto{self.objtype} name must reference a {self.aerationtype!r}")
             return False
-        self.aerate.adjuster.handle(self.object.node)
+        self.aerate.adjuster.handle(self.object.matter)
         return True
 
     def get_doc(self, *args, **kwargs) -> List[List[str]]:
-        output = ""
+        buffer = ""
 
-        (briefdescription,) = self.object.node.xpath("./briefdescription")
-        description_output = self.env.app.aerate.render(briefdescription)
-        output += description_output + "\n\n"
+        for prefix in ("brief", "detailed", "inbody"):
+            (node,) = self.object.matter.xpath(f"./{prefix}description")
+            output = self.aerate.render(node, before=buffer)
+            if not output:
+                continue
+            buffer += ("\n\n" if buffer else "") + output
 
-        (detaileddescription,) = self.object.node.xpath("./detaileddescription")
-        description_output = self.env.app.aerate.render(detaileddescription)
-        output += description_output + "\n\n"
+        return [buffer.splitlines()]
 
-        (inbodydescription,) = self.object.node.xpath("./inbodydescription")
-        description_output = self.env.app.aerate.render(inbodydescription)
-        output += description_output + "\n\n"
+    def add_directive_header(self, sig: str) -> None:
+        """Add the directive header and options to the generated content."""
 
-        return [output.splitlines()]
+        sourcename = self.get_sourcename()
 
-
-class FunctionDocumenter(AerateDocumenter):
-    aerationtype = "function"
-    objtype = "cfunction"
-    directivetype = "function"
-
-    def format_name(self) -> str:
-        (definition_node,) = self.object.node.xpath("./definition")
-        (argsstring_node,) = self.object.node.xpath("./argsstring")
-        return definition_node.text + argsstring_node.text
+        self.add_line(f".. c:namespace:: {self.object.id}", sourcename)
+        super().add_directive_header(sig)
+        self.add_line("   ", sourcename)
+        self.add_line("   .. c:namespace:: NULL", sourcename)
 
     def resolve_name(self, modname: str, parents: Any, path: str, base: Any
                      ) -> Tuple[str, List[str]]:
+        """Return the name of the object to document as the module name."""
         return base, []
 
 
-class TypeDocumenter(AerateDocumenter):
+class FunctionDocumenter(AerationDocumenter):
+    aerationtype = "function"
+    objtype = "aeratefunction"
+    directivetype = "function"
+
+    option_spec = {
+        **AerationDocumenter.option_spec,
+        "file": directives.unchanged,
+    }
+
+    def format_name(self) -> str:
+        (definition_node,) = self.object.matter.xpath("./definition")
+        (argsstring_node,) = self.object.matter.xpath("./argsstring")
+        return definition_node.text + argsstring_node.text
+
+
+class TypeDocumenter(AerationDocumenter):
     aerationtype = "typedef"
-    objtype = "ctype"
+    objtype = "aeratetype"
     directivetype = "type"
 
     def format_name(self) -> str:
-        (type_node,) = self.object.node.xpath("./type")
-        (name_node,) = self.object.node.xpath("./name")
+        (type_node,) = self.object.matter.xpath("./type")
+        (name_node,) = self.object.matter.xpath("./name")
         return type_node.text + name_node.text
 
-    def resolve_name(self, modname: str, parents: Any, path: str, base: Any
-                     ) -> Tuple[str, List[str]]:
-        return base, []
 
-class StructDocumenter(AerateDocumenter):
+class StructDocumenter(AerationDocumenter):
     aerationtype = "struct"
-    objtype = "cstruct"
+    objtype = "aeratestruct"
     directivetype = "struct"
 
     def format_name(self) -> str:
-        (type_node,) = self.object.node.xpath("./type")
-        (name_node,) = self.object.node.xpath("./name")
+        (type_node,) = self.object.matter.xpath("./type")
+        (name_node,) = self.object.matter.xpath("./name")
         return type_node.text + name_node.text
-
-    def resolve_name(self, modname: str, parents: Any, path: str, base: Any
-                     ) -> Tuple[str, List[str]]:
-        return base, []
