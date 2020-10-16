@@ -51,16 +51,6 @@ class AerationDocumenter(Documenter):
 
         return [buffer.splitlines()]
 
-    def add_directive_header(self, sig: str) -> None:
-        """Add the directive header and options to the generated content."""
-
-        sourcename = self.get_sourcename()
-
-        self.add_line(f".. c:namespace:: {self.object.id}", sourcename)
-        super().add_directive_header(sig)
-        self.add_line("   ", sourcename)
-        self.add_line("   .. c:namespace:: NULL", sourcename)
-
     def resolve_name(self, modname: str, parents: Any, path: str, base: Any
                      ) -> Tuple[str, List[str]]:
         """Return the name of the object to document as the module name."""
@@ -81,6 +71,16 @@ class FunctionDocumenter(AerationDocumenter):
         (definition_node,) = self.object.matter.xpath("./definition")
         (argsstring_node,) = self.object.matter.xpath("./argsstring")
         return definition_node.text + argsstring_node.text
+
+    def add_directive_header(self, sig: str) -> None:
+        """Add the directive header and options to the generated content."""
+
+        sourcename = self.get_sourcename()
+
+        self.add_line(f".. c:namespace:: {self.object.compound.id}", sourcename)
+        super().add_directive_header(sig)
+        self.add_line("   ", sourcename)
+        self.add_line("   .. c:namespace:: NULL", sourcename)
 
 
 class TypeDocumenter(AerationDocumenter):

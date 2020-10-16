@@ -1,9 +1,9 @@
 from aerate.engine import Engine
 import unicodedata
 
-__all__ = ("Renderer", "InlineRenderer", "bold_renderer", "emphasis_renderer",
-           "computeroutput_renderer", "subscript_renderer",
-           "superscript_renderer")
+__all__ = ("Renderer", "InlineRenderer", "RoleRenderer", "bold_renderer",
+           "emphasis_renderer", "computeroutput_renderer",
+           "subscript_renderer", "superscript_renderer")
 
 
 class Renderer(Engine):
@@ -14,9 +14,10 @@ class Renderer(Engine):
 
 
 class InlineRenderer:
-    def __init__(self, prefix, suffix=None):
+    def __init__(self, prefix, suffix=None, escape=None):
         self.prefix = prefix
-        self.suffix = suffix if suffix is not None else prefix
+        self.suffix = suffix if suffix is not None else self.prefix
+        self.escape = escape if escape is not None else self.suffix
 
     @staticmethod
     def escape_head(node, before):
@@ -121,8 +122,13 @@ class InlineRenderer:
         return f"{output}{node.tail or ''}"
 
 
+class RoleRenderer(InlineRenderer):
+    def __init__(self, role):
+        super().__init__(f":{role}:`", "`")
+
+
 bold_renderer = InlineRenderer("**")
 emphasis_renderer = InlineRenderer("*")
 computeroutput_renderer = InlineRenderer("``")
-subscript_renderer = InlineRenderer(":subscript:`", "`")
-superscript_renderer = InlineRenderer(":superscript:`", "`")
+subscript_renderer = RoleRenderer("subscript")
+superscript_renderer = RoleRenderer("superscript")

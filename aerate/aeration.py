@@ -67,6 +67,10 @@ class CompoundAeration(Aeration):
         """Return the XML document from the definition file of the compound."""
         return self.aerate.load_document(self.id + ".xml")
 
+    @property
+    def anchor(self) -> str:
+        return self.name
+
     def retrieve_matter(self):
         """Return the *matter* of the aeration."""
 
@@ -82,6 +86,10 @@ class MemberAeration(Aeration):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._compound = None
+
+    @property
+    def anchor(self) -> str:
+        return f"{self.compound.id}.{self.name}"
 
     @property
     def compound(self):

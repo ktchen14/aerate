@@ -10,6 +10,8 @@ Welcome to Sample's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+.. autoaeratefunction:: ambiguous_function
+.. autoaeratefunction:: referrent
 
 
 Indices and tables

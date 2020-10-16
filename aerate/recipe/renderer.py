@@ -1,3 +1,4 @@
+from aerate.aeration import CompoundAeration, MemberAeration
 from aerate.schema import DESCRIPTION_TAGS, SchemaError
 from aerate.render import *
 import textwrap
@@ -43,26 +44,25 @@ def render_simplesect(self, node, before=""):
 @engine.rule("ref", within="para")
 def render_ref(self, node, before=""):
     if node.get("external"):
-        return f"{node.text}{node.tail}"
+        return f"{node.text}{node.tail or ''}"
 
     refid = node.attrib["refid"]
     try:
-        target = self.aerate.index.find_by_id(refid)
-    except KeyError:
-        return f"{node.text}{node.tail}"
+        target = self.aerate.find_by_id(refid)
+    except LookupError:
+        return f"{node.text}{node.tail or ''}"
 
     if target.kind == "function":
-        if target.name == node.text:
-            return f":c:func:`{target.name}`{node.tail}"
-        else:
-            return f":c:func:`{node.text} <{target.name}>`{node.tail}"
+        renderer = RoleRenderer("c:func")
+        role_output = f":c:func:`{node.text} <{target.anchor}>`"
+        return f"{role_output}{node.tail or ''}"
     elif target.kind == "typedef":
         if target.name == node.text:
-            return f":c:type:`{target.name}`{node.tail}"
+            return f":c:type:`{target.name}`{node.tail or ''}"
         else:
-            return f":c:type:`{node.text} <{target.name}>`{node.tail}"
+            return f":c:type:`{node.text} <{target.name}>`{node.tail or ''}"
 
-    return f"{node.text}{node.tail}"
+    return f"{node.text}{node.tail or ''}"
 
 
 @engine.rule("programlisting")

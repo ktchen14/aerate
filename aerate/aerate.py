@@ -42,7 +42,7 @@ class Aerate:
         return self.renderer.invoke(node, *args, **kwargs)
 
     def load_document(self, name):
-        """Load and remember an XML document from the Doxygen root."""
+        """Load and memoize an XML document from the Doxygen root."""
 
         if name not in self.document_memo:
             path = os.path.join(self.doxygen_root, name)
