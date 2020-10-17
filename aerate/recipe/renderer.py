@@ -1,6 +1,8 @@
 from aerate.engine import Engine
 from aerate.schema import DESCRIPTION_TAGS, SchemaError
-from aerate.render import *
+from aerate.render import (
+    RoleRenderer, bold_renderer, emphasis_renderer, computeroutput_renderer,
+    subscript_renderer, superscript_renderer)
 import textwrap
 
 engine: Engine = engine  # Stop "F821 undefined name 'engine'"
