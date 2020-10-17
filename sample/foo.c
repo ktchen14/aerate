@@ -10,6 +10,11 @@ struct ambiguous_struct {
 void referrent(void) {
 }
 
+/// This is another referrent
+int referrent(int a) {
+  return 0;
+}
+
 /// This is an ambiguous function in foo.c with a referrent()
 void ambiguous_function(void) {
 }

@@ -15,6 +15,13 @@ class Aeration:
 
     @staticmethod
     def make(aerate, node):
+        """
+        Make a `CompoundAeration` or `MemberAeration` from a *node*.
+
+        The *node* must be a ``<compound>`` or ``<member>`` node from
+        ``index.xml``.
+        """
+
         return {
             "compound": CompoundAeration, "member": MemberAeration,
         }[node.tag](aerate, node)

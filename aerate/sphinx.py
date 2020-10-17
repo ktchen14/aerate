@@ -36,7 +36,7 @@ class AerationDocumenter(Documenter):
 
         self.object = self.aerate.find_member_by_name(self.modname)
         if self.object.kind != self.aerationtype:
-            logger.warning(f"auto{self.objtype} name must reference a {self.aerationtype!r}")
+            logger.warning(f"auto{self.objtype} name must reference a {self.aerationtype}")
             return False
         self.aerate.adjuster.handle(self.object.matter)
         return True
@@ -83,7 +83,6 @@ class FunctionDocumenter(AerationDocumenter):
         super().add_directive_header(sig)
         # self.add_line("   ", sourcename)
         # self.add_line("   .. c:namespace:: NULL", sourcename)
-        self.add_line(f"   :aerate_id: {self.object.id}", sourcename)
 
 
 class TypeDocumenter(AerationDocumenter):
