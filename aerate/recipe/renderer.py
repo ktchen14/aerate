@@ -45,11 +45,13 @@ def render_simplesect(self, node, before=""):
     return output
 
 
+@engine.rule("ref", within="para", when=lambda node: node.get("external"))
+def render_ref_external(self, node, before=""):
+    return f"{node.text}{node.tail or ''}"
+
+
 @engine.rule("ref", within="para")
 def render_ref(self, node, before=""):
-    if node.get("external"):
-        return f"{node.text}{node.tail or ''}"
-
     refid = node.attrib["refid"]
     try:
         target = self.aerate[refid]
@@ -58,7 +60,10 @@ def render_ref(self, node, before=""):
 
     if target.kind == "function":
         renderer = RoleRenderer("c:func")
-        role_output = f":c:func:`{node.text} <aerate_id={target.id}>`"
+        if target.name == node.text:
+            role_output = f":c:func:`{node.text}`"
+        else:
+            role_output = f":c:func:`{node.text} <{target.name}>`"
         return f"{role_output}{node.tail or ''}"
     elif target.kind == "typedef":
         if target.name == node.text:
