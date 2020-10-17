@@ -30,7 +30,7 @@ def render_simplesect_admonition(self, node, before=""):
 
 
 @engine.rule("simplesect", when=lambda node: node.get("kind") == "see")
-def render_simplesect_admonition(self, node, before=""):
+def render_simplesect_see(self, node, before=""):
     prefix = ".. seealso::"
     output = render_simplesect(self, node, before)
     output = textwrap.indent(output, " " * 3)
@@ -157,7 +157,7 @@ def render_function_definition(self, node, buffer=""):
 
 
 @engine.rule("memberdef", when=lambda node: node.get("kind") == "typedef")
-def render_function_definition(self, node, buffer=""):
+def render_typedef_definition(self, node, buffer=""):
     (type_node,) = node.xpath("./type")
     (name_node,) = node.xpath("./name")
 
