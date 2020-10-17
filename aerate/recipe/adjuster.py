@@ -1,6 +1,9 @@
+from aerate.mutation import MutationEngine
 from aerate.mutation import extend_tail, extend_text
 from aerate.schema import SchemaError, INLINE_TAGS, is_inline, is_structural
 import re
+
+engine: MutationEngine = engine  # Stop "F821 undefined name 'engine'"
 
 
 @engine.rule("ref", within="highlight")

@@ -1,7 +1,9 @@
-from aerate.aeration import CompoundAeration, MemberAeration
+from aerate.engine import Engine
 from aerate.schema import DESCRIPTION_TAGS, SchemaError
 from aerate.render import *
 import textwrap
+
+engine: Engine = engine  # Stop "F821 undefined name 'engine'"
 
 
 # The simplesect's kind must be "see", "return", "author", "authors",
@@ -27,7 +29,7 @@ def render_simplesect_admonition(self, node, before=""):
 
 @engine.rule("simplesect", when=lambda node: node.get("kind") == "see")
 def render_simplesect_admonition(self, node, before=""):
-    prefix = f".. seealso::"
+    prefix = ".. seealso::"
     output = render_simplesect(self, node, before)
     output = textwrap.indent(output, " " * 3)
     return prefix + "\n\n" + output + "\n\n"
