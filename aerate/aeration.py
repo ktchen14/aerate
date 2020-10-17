@@ -95,7 +95,7 @@ class MemberAeration(Aeration):
     def compound(self):
         """Return the compound that this member is inside as an aeration."""
         if self._compound is None:
-            self._compound = self.aerate.find_by_id(self.node.getparent().attrib["refid"])
+            self._compound = self.aerate[self.node.getparent().attrib["refid"]]
         return self._compound
 
     def retrieve_matter(self):

@@ -29,6 +29,13 @@ class Aerate:
         self.renderer = Renderer(self)
         self.renderer.load_recipe("aerate.recipe.renderer")
 
+    def __getitem__(self, id):
+        """Return the aeration of an object from its *id*."""
+        if id not in self.aeration_memo:
+            node = self.canonical_node_by_id(id)
+            self.aeration_memo[id] = Aeration.make(self, node)
+        return self.aeration_memo[id]
+
     def adjust(self, node, *args, **kwargs):
         """Use the configured adjuster to adjust the *node*."""
         return self.adjuster.handle(node, *args, **kwargs)
@@ -49,14 +56,35 @@ class Aerate:
             self.document_memo[name] = etree.parse(path, self.parser)
         return self.document_memo[name]
 
-    def find_by_id(self, id):
-        """Return the aeration of an object from its *id*."""
+    def aeration_of(self, node):
+        if node.tag == "compound":
+            id = node.attrib["refid"]
+            if id not in self.aeration_memo:
+                self.aeration_memo[id] = CompoundAeration(self, node)
+            return self.aeration_memo[id]
 
-        if id not in self.aeration_memo:
-            node = self.canonical_node_by_id(id)
-            aeration = Aeration.make(self, node)
-            self.aeration_memo[id] = aeration
-        return self.aeration_memo[id]
+        if node.tag == "member":
+            return self[node.attrib["refid"]]
+
+        if node.tag == "compounddef":
+            return self[node.attrib["id"]]
+
+        if node.tag == "memberdef":
+            return self[node.attrib["id"]]
+
+        raise ValueError(f"Node <{node.tag}> isn't a <compound>, <member>, <compounddef>, or <memberdef>")
+
+    def find_file(self, name):
+        result = self.document.xpath(
+            r'//compound[@kind="file" and name/text()=$name]',
+            name=os.path.basename(name))
+
+        for node in result:
+            aeration = self.aeration_of(node)
+            (location_node,) = aeration.matter.xpath("/location")
+            if location_node is None or location_node.get("file") != name:
+                continue
+            return aeration
 
     def find_module_by_name(self, name):
         result = self.document.xpath(r'//compound[name/text()=$name]',
@@ -71,23 +99,41 @@ class Aerate:
 
         return Aeration.make(self, result[0])
 
-    def find_member_by_name(self, name, module=None):
-        if module is None:
-            search_root = self.document
-        elif not isinstance(module, Aeration):
-            search_root = self.find_module_by_name(module).index_node
-        else:
-            search_root = module.index_node
-
-        result = search_root.xpath(r'.//member[name/text()=$name]', name=name)
+    def find_member_by_name(self, name):
+        result = self.document.xpath(r'.//member[name/text()=$name]', name=name)
 
         if not result:
-            raise KeyError(repr(name))
-        elif len(result) > 1:
-            pass
-            # raise KeyError(repr(name))
+            raise LookupError(f"No member with name {name!r}")
 
-        return Aeration.make(self, result[0])
+        if len(result) == 1:
+            id = result[0].attrib["refid"]
+            if id not in self.aeration_memo:
+                self.aeration_memo[id] = Aeration.make(result[0])
+            return self.aeration_memo[id]
+
+        ids = {node.attrib["refid"] for node in result}
+        if len(ids) > 1:
+            raise LookupError(f"Too many results for {name!r}")
+        id = result[0].attrib["refid"]
+        return self[id]
+
+    # def find_member_by_name(self, name, module=None):
+    #     if module is None:
+    #         search_root = self.document
+    #     elif not isinstance(module, Aeration):
+    #         search_root = self.find_module_by_name(module).index_node
+    #     else:
+    #         search_root = module.index_node
+
+    #     result = search_root.xpath(r'.//member[name/text()=$name]', name=name)
+
+    #     if not result:
+    #         raise KeyError(repr(name))
+    #     elif len(result) > 1:
+    #         pass
+    #         # raise KeyError(repr(name))
+
+    #     return Aeration.make(self, result[0])
 
     def canonical_node_by_id(self, id):
         """Return the canonical <compound> or <member> node for an *id*."""
@@ -112,9 +158,9 @@ class Aerate:
         # <compound> with the longest refid is the canonical one. Two refids
         # can't be the same length if both are a prefix of a <member>'s refid.
         last_resort = result[0]
-        result = filter(lambda node:
-                        node["refid"].startswith(node.getparent()["refid"]),
-                        result)
+        result = list(filter(
+            lambda node: node.attrib["refid"].startswith(node.getparent().attrib["refid"]),
+            result))
 
         if len(result) == 1:
             return result[0]
@@ -124,18 +170,3 @@ class Aerate:
             return last_resort
 
         return max(result, key=lambda node: len(node.getparent()["refid"]))
-
-    def find_file(self, name):
-        result = self.document.xpath(
-            r'//compound[@kind="file" and name/text()=$name]',
-            name=os.path.basename(name))
-
-        for node in result:
-            if node["id"] not in self.aeration_memo:
-                self.aeration_memo[node["id"]] = make_aeration(self, node)
-            aeration = self.aeration_memo[node["id"]]
-            (location_node,) = aeration.node.xpath("/location")
-            if location_node is None or location_node.get("file") != name:
-                continue
-            return aeration
-

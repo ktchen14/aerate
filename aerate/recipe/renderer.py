@@ -48,13 +48,13 @@ def render_ref(self, node, before=""):
 
     refid = node.attrib["refid"]
     try:
-        target = self.aerate.find_by_id(refid)
+        target = self.aerate[refid]
     except LookupError:
         return f"{node.text}{node.tail or ''}"
 
     if target.kind == "function":
         renderer = RoleRenderer("c:func")
-        role_output = f":c:func:`{node.text} <{target.anchor}>`"
+        role_output = f":c:func:`{node.text} <aerate_id={target.id}>`"
         return f"{role_output}{node.tail or ''}"
     elif target.kind == "typedef":
         if target.name == node.text:

@@ -27,6 +27,8 @@ class AerationDocumenter(Documenter):
     @property
     def aerate(self) -> Aerate:
         """The `Aerate` instance in the documenter's Sphinx application."""
+        if self.env.app.aerate is None:
+            self.env.app.aerate = Aerate(self.env.app.config.aerate_doxygen_root)
         return self.env.app.aerate
 
     def import_object(self) -> bool:
@@ -77,10 +79,11 @@ class FunctionDocumenter(AerationDocumenter):
 
         sourcename = self.get_sourcename()
 
-        self.add_line(f".. c:namespace:: {self.object.compound.id}", sourcename)
+        # self.add_line(f".. c:namespace:: {self.object.compound.id}", sourcename)
         super().add_directive_header(sig)
-        self.add_line("   ", sourcename)
-        self.add_line("   .. c:namespace:: NULL", sourcename)
+        # self.add_line("   ", sourcename)
+        # self.add_line("   .. c:namespace:: NULL", sourcename)
+        self.add_line(f"   :aerate_id: {self.object.id}", sourcename)
 
 
 class TypeDocumenter(AerationDocumenter):
