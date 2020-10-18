@@ -3,7 +3,7 @@
 import codecs
 from setuptools import setup
 
-with codecs.open("README.me", encoding="utf-8") as f:
+with codecs.open("README.md", encoding="utf-8") as f:
     readme = f.read()
 
 setup(
