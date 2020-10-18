@@ -27,5 +27,5 @@ setup(
         "Topic :: Documentation",
         "Topic :: Software Development :: Documentation",
     ],
-    python_requires='>=3.4',
+    python_requires='>=3.6',
 )
