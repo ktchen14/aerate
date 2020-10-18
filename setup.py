@@ -1,16 +1,18 @@
 #! /usr/bin/env python
 
-import codecs
+import os
 from setuptools import setup
 
-with codecs.open("README.md", encoding="utf-8") as f:
+root = os.path.abspath(path.dirname(__file__))
+with open(os.path.join(root, "README.md"), encoding="utf-8") as f:
     readme = f.read()
 
 setup(
-    name="aerate",
+    name="Aerate",
     version="0.0.1",
     description="A Doxygen to Sphinx bridge",
     long_description=readme,
+    long_description_content_type="text/markdown",
     author="Kaiting Chen",
     author_email="ktchen14@gmail.com",
     url="https://github.com/ktchen14/aerate",
@@ -25,4 +27,5 @@ setup(
         "Topic :: Documentation",
         "Topic :: Software Development :: Documentation",
     ],
+    python_requires='>=3.4',
 )
