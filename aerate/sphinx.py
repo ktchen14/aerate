@@ -28,11 +28,11 @@ class AerationDocumenter(Documenter):
     def aerate(self) -> Aerate:
         """The `Aerate` instance in the documenter's Sphinx application."""
         if self.env.app.aerate is None:
-            self.env.app.aerate = Aerate(self.env.app.config.aerate_doxygen_root)
+            self.env.app.aerate = Aerate(self.env.app)
         return self.env.app.aerate
 
     def import_object(self) -> bool:
-        """Set *self.object* to be the `Aeration` to be documented."""
+        """Set *self.object* to be the aeration to be documented."""
 
         self.object = self.aerate.find_member_by_name(self.modname)
         if self.object.kind != self.aerationtype:
@@ -70,19 +70,12 @@ class FunctionDocumenter(AerationDocumenter):
     }
 
     def format_name(self) -> str:
+        anchor = self.object.anchor
+        type_text = self.object.matter.xpath("string(./type)")
         (definition_node,) = self.object.matter.xpath("./definition")
         (argsstring_node,) = self.object.matter.xpath("./argsstring")
-        return definition_node.text + argsstring_node.text
-
-    def add_directive_header(self, sig: str) -> None:
-        """Add the directive header and options to the generated content."""
-
-        sourcename = self.get_sourcename()
-
-        # self.add_line(f".. c:namespace:: {self.object.compound.id}", sourcename)
-        super().add_directive_header(sig)
-        # self.add_line("   ", sourcename)
-        # self.add_line("   .. c:namespace:: NULL", sourcename)
+        return f"{type_text} {anchor}{argsstring_node.text}"
+        # return definition_node.text + argsstring_node.text
 
 
 class TypeDocumenter(AerationDocumenter):

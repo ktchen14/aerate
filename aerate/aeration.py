@@ -29,13 +29,25 @@ class Aeration:
     def __init__(self, aerate, node):
         self.aerate = aerate
 
+        self._anchor = None
         self._node = node
         self._matter = None
+
+    @property
+    def sphinx(self):
+        return self.aerate.sphinx
 
     @property
     def name(self) -> str:
         """Return the name of the aeration."""
         return self.node.find("name").text
+
+    @property
+    def anchor(self) -> str:
+        if self._anchor is None:
+            anchor = self.sphinx.emit_firstresult("aerate-generate-anchor", self)
+            self._anchor = anchor or self.name
+        return self._anchor
 
     @property
     def id(self) -> str:
@@ -74,10 +86,6 @@ class CompoundAeration(Aeration):
         """Return the XML document from the definition file of the compound."""
         return self.aerate.load_document(self.id + ".xml")
 
-    @property
-    def anchor(self) -> str:
-        return self.name
-
     def retrieve_matter(self):
         """Return the *matter* of the aeration."""
 
@@ -93,10 +101,6 @@ class MemberAeration(Aeration):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._compound = None
-
-    @property
-    def anchor(self) -> str:
-        return f"{self.compound.id}.{self.name}"
 
     @property
     def compound(self):

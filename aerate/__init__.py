@@ -14,6 +14,8 @@ def setup(sphinx):
                             os.path.join(sphinx.confdir, "xml"),
                             "env")
 
+    sphinx.add_event("aerate-generate-anchor")
+
     sphinx.aerate = None
     sphinx.add_autodocumenter(FunctionDocumenter)
     sphinx.add_autodocumenter(TypeDocumenter)

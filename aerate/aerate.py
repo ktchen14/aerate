@@ -7,14 +7,16 @@ import os
 
 
 class Aerate:
-    def __init__(self, doxygen_root):
+    def __init__(self, sphinx):
+        self.sphinx = sphinx
+
         # The XML parser and Doxygen root to be used to load each document
         self.parser = XMLParser(ns_clean=True,
                                 remove_blank_text=True,
                                 remove_comments=True,
                                 remove_pis=True,
                                 strip_cdata=True)
-        self.doxygen_root = doxygen_root
+        self.doxygen_root = sphinx.config.aerate_doxygen_root
 
         self.aeration_memo = {}
         self.document_memo = {}

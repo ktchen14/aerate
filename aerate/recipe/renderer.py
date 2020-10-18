@@ -47,7 +47,7 @@ def render_simplesect(self, node, before=""):
 
 @engine.rule("ref", within="para", when=lambda node: node.get("external"))
 def render_ref_external(self, node, before=""):
-    return f"{node.text}{node.tail or ''}"
+    return f"`!{node.text}`{node.tail or ''}"
 
 
 @engine.rule("ref", within="para")
@@ -56,7 +56,7 @@ def render_ref(self, node, before=""):
     try:
         target = self.aerate[refid]
     except LookupError:
-        return f"{node.text}{node.tail or ''}"
+        return f"`!{node.text}`{node.tail or ''}"
 
     if target.kind == "function":
         renderer = RoleRenderer("c:func")
@@ -71,7 +71,7 @@ def render_ref(self, node, before=""):
         else:
             return f":c:type:`{node.text} <{target.name}>`{node.tail or ''}"
 
-    return f"{node.text}{node.tail or ''}"
+    return f"`!{node.text}`{node.tail or ''}"
 
 
 @engine.rule("programlisting")
