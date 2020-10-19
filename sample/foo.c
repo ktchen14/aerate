@@ -15,6 +15,11 @@ int referrent(int a) {
   return 0;
 }
 
+/// This is a unique '<em>*'function*</em>* that's unique()
+int unique(int b) {
+  return 0;
+}
+
 /// This is an ambiguous function in foo.c with a referrent()
 void ambiguous_function(void) {
 }
