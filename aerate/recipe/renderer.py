@@ -1,8 +1,8 @@
 from aerate.engine import Renderer
 from aerate.schema import DESCRIPTION_TAGS, SchemaError
 from aerate.render import (
-    RoleRenderer, escape_text, bold_renderer, emphasis_renderer,
-    computeroutput_renderer, subscript_renderer, superscript_renderer)
+    escape_text, bold_renderer, emphasis_renderer, computeroutput_renderer,
+    subscript_renderer, superscript_renderer, xref_func_renderer)
 import textwrap
 
 engine: Renderer = engine  # Stop "F821 undefined name 'engine'"
@@ -59,12 +59,11 @@ def render_ref(self, node, before=""):
         return f"`!{node.text}`{node.tail or ''}"
 
     if target.kind == "function":
-        renderer = RoleRenderer("c:func")
-        if target.name == node.text:
-            role_output = f":c:func:`{node.text}`"
+        if node.text in {target.anchor, f"{target.anchor}()"}:
+            inside = node.text
         else:
-            role_output = f":c:func:`{node.text} <{target.name}>`"
-        return f"{role_output}{node.tail or ''}"
+            inside = f"{node.text} <{target.anchor}>"
+        return xref_func_renderer.render_text(inside, node.tail, before)
     elif target.kind == "typedef":
         if target.name == node.text:
             return f":c:type:`{target.name}`{node.tail or ''}"
