@@ -110,7 +110,7 @@ class Aerate:
         if len(result) == 1:
             id = result[0].attrib["refid"]
             if id not in self.aeration_memo:
-                self.aeration_memo[id] = Aeration.make(result[0])
+                self.aeration_memo[id] = Aeration.make(self, result[0])
             return self.aeration_memo[id]
 
         ids = {node.attrib["refid"] for node in result}
