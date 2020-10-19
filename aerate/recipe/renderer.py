@@ -1,11 +1,11 @@
-from aerate.engine import Engine
+from aerate.engine import Renderer
 from aerate.schema import DESCRIPTION_TAGS, SchemaError
 from aerate.render import (
     RoleRenderer, escape_text, bold_renderer, emphasis_renderer,
     computeroutput_renderer, subscript_renderer, superscript_renderer)
 import textwrap
 
-engine: Engine = engine  # Stop "F821 undefined name 'engine'"
+engine: Renderer = engine  # Stop "F821 undefined name 'engine'"
 
 
 # The simplesect's kind must be "see", "return", "author", "authors",

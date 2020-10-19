@@ -1,6 +1,6 @@
 from aerate.aeration import Aeration
+from aerate.engine import Renderer
 from aerate.mutation import MutationEngine
-from aerate.render import Renderer
 from lxml import etree
 from lxml.etree import XMLParser
 import os

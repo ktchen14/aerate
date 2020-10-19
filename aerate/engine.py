@@ -216,3 +216,10 @@ class Rule:
             return False
 
         return True
+
+
+class Renderer(Engine):
+    """An engine that renders an unaccepted node as its text."""
+
+    def on_unaccepted(self, node, *args, **kwargs):
+        return node.xpath("string()")

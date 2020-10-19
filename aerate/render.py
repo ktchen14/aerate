@@ -1,19 +1,11 @@
-from aerate.engine import Engine
 import re
 import unicodedata
 
 __all__ = (
-    "Renderer", "escape_text", "InlineRenderer", "RoleRenderer",
-    "bold_renderer", "emphasis_renderer", "computeroutput_renderer",
-    "subscript_renderer", "superscript_renderer"
+    "escape_text", "InlineRenderer", "RoleRenderer", "bold_renderer",
+    "emphasis_renderer", "computeroutput_renderer", "subscript_renderer",
+    "superscript_renderer"
 )
-
-
-class Renderer(Engine):
-    """An engine that renders an unaccepted node as its text."""
-
-    def on_unaccepted(self, node, *args, **kwargs):
-        return node.xpath("string()")
 
 
 def escape_text(text):
