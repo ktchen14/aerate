@@ -29,6 +29,14 @@ def render_simplesect_admonition(self, node, before=""):
     return prefix + "\n\n" + output + "\n\n"
 
 
+@engine.rule("simplesect", when=lambda node: node.get("kind") == "remark")
+def render_simplesect_remark(self, node, before=""):
+    prefix = f".. admonition:: Remark"
+    output = render_simplesect(self, node, before)
+    output = textwrap.indent(output, " " * 3)
+    return prefix + "\n\n" + output + "\n\n"
+
+
 @engine.rule("simplesect", when=lambda node: node.get("kind") == "see")
 def render_simplesect_see(self, node, before=""):
     prefix = ".. seealso::"
