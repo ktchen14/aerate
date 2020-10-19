@@ -112,6 +112,11 @@ def divide_para_by_type(self, cursor):
     return cursor
 
 
+@engine.rule("para", when=lambda node: node.text)
+def trim_para(self, cursor):
+    cursor.node.text = cursor.node.text.lstrip()
+
+
 @engine.rule("para", unless=lambda node: node.text or len(node))
 def remove_null_para(self, cursor):
     """Remove a ``para`` node with no text or children."""
