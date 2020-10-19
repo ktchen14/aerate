@@ -1,8 +1,8 @@
 from aerate.engine import Engine
 from aerate.schema import DESCRIPTION_TAGS, SchemaError
 from aerate.render import (
-    RoleRenderer, bold_renderer, emphasis_renderer, computeroutput_renderer,
-    subscript_renderer, superscript_renderer)
+    RoleRenderer, escape_text, bold_renderer, emphasis_renderer,
+    computeroutput_renderer, subscript_renderer, superscript_renderer)
 import textwrap
 
 engine: Engine = engine  # Stop "F821 undefined name 'engine'"
@@ -108,7 +108,7 @@ def render_superscript(self, node, before=""):
 
 @engine.rule("para")
 def render_para(self, node, buffer=""):
-    output = node.text or ""
+    output = escape_text(node.text or "")
     for item in node:
         output += self.invoke(item, output)
     return output + "\n\n"

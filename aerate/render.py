@@ -2,9 +2,11 @@ from aerate.engine import Engine
 import re
 import unicodedata
 
-__all__ = ("Renderer", "escape_text", "bold_renderer", "emphasis_renderer",
-           "computeroutput_renderer", "subscript_renderer",
-           "superscript_renderer")
+__all__ = (
+    "Renderer", "escape_text", "InlineRenderer", "RoleRenderer",
+    "bold_renderer", "emphasis_renderer", "computeroutput_renderer",
+    "subscript_renderer", "superscript_renderer"
+)
 
 
 class Renderer(Engine):
