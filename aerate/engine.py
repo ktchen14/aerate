@@ -5,7 +5,7 @@ __all__ = ("Engine", "Rule")
 
 class Engine:
     """
-    A collection of :class:`Rule`\s.
+    A collection of :class:`Rule`\\s.
 
     In general an engine maintains a list of rules. When it's asked to handle a
     node an engine will search through this list in order until it finds a rule

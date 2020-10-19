@@ -40,8 +40,8 @@ class InlineRenderer:
 
         :param prefix: the inline markup start-string
         :param suffix: the inline markup end-string or *prefix* if unspecified
-        :param escape: a string to escape (in addition to a single ``\\``) in
-            the inline markup text or *suffix* if unspecified
+        :param escape: a string to escape (in addition to ``\\\\``) in the
+            inline markup text or *suffix* if unspecified
         """
 
         self.prefix = prefix
@@ -51,7 +51,7 @@ class InlineRenderer:
     @staticmethod
     def should_escape_prefix(text, before):
         """
-        Return if ``\\ `` should be inserted before the inline markup string.
+        Return if ``\\\\ `` should be inserted before the inline markup string.
 
         :param text: the text to render inside the inline markup
         :param before: the character in the buffer before the inline markup
@@ -120,7 +120,7 @@ class InlineRenderer:
     @staticmethod
     def should_escape_suffix(tail):
         """
-        Return if ``\\`` should be appended to the inline markup string.
+        Return if ``\\\\`` should be appended to the inline markup string.
 
         :param tail: the text that will follow the inline markup
         """
