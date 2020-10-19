@@ -3,11 +3,11 @@ import unicodedata
 
 __all__ = (
     "escape_text", "InlineRenderer", "RoleRenderer", "bold_renderer",
-    "emphasis_renderer", "computeroutput_renderer", "subscript_renderer",
-    "superscript_renderer", "xref_member_renderer", "xref_data_renderer",
-    "xref_var_renderer", "xref_func_renderer", "xref_macro_renderer",
-    "xref_struct_renderer", "xref_union_renderer", "xref_enum_renderer",
-    "xref_enumerator_renderer", "xref_type_renderer",
+    "emphasis_renderer", "math_renderer", "computeroutput_renderer",
+    "subscript_renderer", "superscript_renderer", "xref_member_renderer",
+    "xref_data_renderer", "xref_var_renderer", "xref_func_renderer",
+    "xref_macro_renderer", "xref_struct_renderer", "xref_union_renderer",
+    "xref_enum_renderer", "xref_enumerator_renderer", "xref_type_renderer",
 )
 
 
@@ -200,8 +200,9 @@ class RoleRenderer(InlineRenderer):
 
 
 bold_renderer = InlineRenderer("**")
-emphasis_renderer = InlineRenderer("*")
 computeroutput_renderer = InlineRenderer("``")
+emphasis_renderer = InlineRenderer("*")
+math_renderer = RoleRenderer("math")
 subscript_renderer = RoleRenderer("subscript")
 superscript_renderer = RoleRenderer("superscript")
 

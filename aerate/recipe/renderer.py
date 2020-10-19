@@ -1,8 +1,11 @@
 from aerate.engine import Renderer
-from aerate.schema import DESCRIPTION_TAGS, SchemaError
+from aerate.schema import (
+    DESCRIPTION_TAGS, SchemaError, is_inline, is_structural,
+)
 from aerate.render import (
-    escape_text, bold_renderer, emphasis_renderer, computeroutput_renderer,
-    subscript_renderer, superscript_renderer, xref_func_renderer)
+    escape_text, bold_renderer, emphasis_renderer, math_renderer,
+    computeroutput_renderer, subscript_renderer, superscript_renderer,
+    xref_func_renderer)
 import textwrap
 
 engine: Renderer = engine  # Stop "F821 undefined name 'engine'"
@@ -111,6 +114,17 @@ def render_subscript(self, node, before=""):
 @engine.rule("superscript")
 def render_superscript(self, node, before=""):
     return superscript_renderer.render(node, before)
+
+
+@engine.rule("formula", when=lambda node: is_structural(node))
+def render_structural_formula(self, node, before=""):
+    prefix = ".. math::\n   :nowrap:\n\n"
+    return prefix + textwrap.indent(node.text, " " * 3)
+
+
+@engine.rule("formula", when=lambda node: is_inline(node))
+def render_inline_formula(self, node, before=""):
+    return math_renderer.render(node, before=before)
 
 
 @engine.rule("para")
