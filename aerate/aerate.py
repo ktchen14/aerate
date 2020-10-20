@@ -5,17 +5,15 @@ from lxml import etree
 from lxml.etree import XMLParser
 import os
 
+# The XML parser to be used to load each document
+PARSER = XMLParser(
+    ns_clean=True, remove_blank_text=True, remove_comments=True,
+    remove_pis=True, strip_cdata=True)
+
 
 class Aerate:
     def __init__(self, sphinx):
         self.sphinx = sphinx
-
-        # The XML parser and Doxygen root to be used to load each document
-        self.parser = XMLParser(ns_clean=True,
-                                remove_blank_text=True,
-                                remove_comments=True,
-                                remove_pis=True,
-                                strip_cdata=True)
         self.doxygen_root = sphinx.config.aerate_doxygen_root
 
         self.aeration_memo = {}
@@ -54,88 +52,28 @@ class Aerate:
         """Load and memoize an XML document from the Doxygen root."""
 
         if name not in self.document_memo:
-            path = os.path.join(self.doxygen_root, name)
-            self.document_memo[name] = etree.parse(path, self.parser)
+            self.document_memo[name] = etree.parse(
+                os.path.join(self.doxygen_root, name),
+                PARSER)
         return self.document_memo[name]
 
-    def aeration_of(self, node):
-        if node.tag == "compound":
-            id = node.attrib["refid"]
-            if id not in self.aeration_memo:
-                self.aeration_memo[id] = CompoundAeration(self, node)
-            return self.aeration_memo[id]
+    def find_member(self, name, kind=None):
+        """Find and return the aeration of a member by *name* and *kind*."""
 
-        if node.tag == "member":
-            return self[node.attrib["refid"]]
-
-        if node.tag == "compounddef":
-            return self[node.attrib["id"]]
-
-        if node.tag == "memberdef":
-            return self[node.attrib["id"]]
-
-        raise ValueError(f"Node <{node.tag}> isn't a <compound>, <member>, <compounddef>, or <memberdef>")
-
-    def find_file(self, name):
-        result = self.document.xpath(
-            r'//compound[@kind="file" and name/text()=$name]',
-            name=os.path.basename(name))
-
-        for node in result:
-            aeration = self.aeration_of(node)
-            (location_node,) = aeration.matter.xpath("/location")
-            if location_node is None or location_node.get("file") != name:
-                continue
-            return aeration
-
-    def find_module_by_name(self, name):
-        result = self.document.xpath(r'//compound[name/text()=$name]',
-                                     name=name)
+        if kind is not None:
+            result = self.document.xpath(
+                ".//member[name/text()=$name and @kind=$kind]",
+                name=name,
+                kind=kind)
+        else:
+            result = self.document.xpath(
+                ".//member[name/text()=$name]",
+                name=name)
 
         if not result:
-            raise KeyError(repr(name))
-
-        if len({node.attrib["refid"] for node in result}) > 1:
-            pass
-            # raise KeyError(repr(name))
-
-        return Aeration.make(self, result[0])
-
-    def find_member_by_name(self, name):
-        result = self.document.xpath(r'.//member[name/text()=$name]', name=name)
-
-        if not result:
-            raise LookupError(f"No member with name {name!r}")
-
-        if len(result) == 1:
-            id = result[0].attrib["refid"]
-            if id not in self.aeration_memo:
-                self.aeration_memo[id] = Aeration.make(self, result[0])
-            return self.aeration_memo[id]
-
-        ids = {node.attrib["refid"] for node in result}
-        if len(ids) > 1:
-            raise LookupError(f"Too many results for {name!r}")
-        id = result[0].attrib["refid"]
-        return self[id]
-
-    # def find_member_by_name(self, name, module=None):
-    #     if module is None:
-    #         search_root = self.document
-    #     elif not isinstance(module, Aeration):
-    #         search_root = self.find_module_by_name(module).index_node
-    #     else:
-    #         search_root = module.index_node
-
-    #     result = search_root.xpath(r'.//member[name/text()=$name]', name=name)
-
-    #     if not result:
-    #         raise KeyError(repr(name))
-    #     elif len(result) > 1:
-    #         pass
-    #         # raise KeyError(repr(name))
-
-    #     return Aeration.make(self, result[0])
+            raise LookupError(f"No <member> with name {name!r} in index.xml")
+        # TODO: handle this
+        return self[result[0].attrib["refid"]]
 
     def canonical_node_by_id(self, id):
         """Return the canonical <compound> or <member> node for an *id*."""
@@ -146,7 +84,8 @@ class Aerate:
             id=id)
 
         if not result:
-            raise LookupError(f"No <compound> or <member> with refid {id!r} in index.xml")
+            raise LookupError(f"No <compound> or <member> with refid {id!r} "
+                              "in index.xml")
 
         # Return a unique result
         if len(result) == 1:
@@ -159,10 +98,12 @@ class Aerate:
         # <member> satisfies this requirement, then the one inside the
         # <compound> with the longest refid is the canonical one. Two refids
         # can't be the same length if both are a prefix of a <member>'s refid.
+        def is_canonical(node):
+            parent_id = node.getparent().attrib["refid"]
+            id = node.attrib["refid"]
+            return id.startswith(parent_id)
         last_resort = result[0]
-        result = list(filter(
-            lambda node: node.attrib["refid"].startswith(node.getparent().attrib["refid"]),
-            result))
+        result = list(filter(is_canonical, result))
 
         if len(result) == 1:
             return result[0]

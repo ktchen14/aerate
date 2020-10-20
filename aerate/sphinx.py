@@ -34,7 +34,7 @@ class AerationDocumenter(Documenter):
     def import_object(self) -> bool:
         """Set *self.object* to be the aeration to be documented."""
 
-        self.object = self.aerate.find_member_by_name(self.modname)
+        self.object = self.aerate.find_member(self.modname, kind=self.aerationtype)
         if self.object.kind != self.aerationtype:
             logger.warning(f"auto{self.objtype} name must reference a {self.aerationtype}")
             return False
