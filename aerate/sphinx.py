@@ -1,5 +1,4 @@
 from aerate.aerate import Aerate, Aeration
-from docutils.parsers.rst import directives
 from sphinx.ext.autodoc import Documenter
 from sphinx.util import logging
 from typing import Any, Tuple, List
@@ -76,11 +75,6 @@ class FunctionDocumenter(AerationDocumenter):
     aerationtype = "function"
     objtype = "aeratefunction"
     directivetype = "function"
-
-    option_spec = {
-        **AerationDocumenter.option_spec,
-        "file": directives.unchanged,
-    }
 
     def format_name(self) -> str:
         anchor = self.object.anchor
