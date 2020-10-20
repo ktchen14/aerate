@@ -33,21 +33,15 @@ class Aeration:
         self._node = node
         self._matter = None
 
+    def __eq__(self, other):
+        return self.id == other.id
+
+    def __hash__(self):
+        return hash(self.id)
+
     @property
     def sphinx(self):
         return self.aerate.sphinx
-
-    @property
-    def name(self) -> str:
-        """Return the name of the aeration."""
-        return self.node.find("name").text
-
-    @property
-    def anchor(self) -> str:
-        if self._anchor is None:
-            anchor = self.sphinx.emit_firstresult("aerate-generate-anchor", self)
-            self._anchor = anchor or self.name
-        return self._anchor
 
     @property
     def id(self) -> str:
@@ -55,9 +49,37 @@ class Aeration:
         return self.node.attrib["refid"]
 
     @property
+    def name(self) -> str:
+        """Return the name of the aeration."""
+        return self.node.find("name").text
+
+    @property
     def kind(self) -> str:
         """Return the "kind" of the aeration."""
         return self.node.attrib["kind"]
+
+    @property
+    def anchor(self) -> str:
+        """
+        Return the string to use as the aeration's name in the directive line.
+
+        The default implementation will return the aeration's name (from its
+        ``<name>`` node in its matter). This is fine when an object of a
+        specific kind is uniquely identifiable by its name. However, if a kind
+        and name doesn't unique identify an object (e.g. objects with the same
+        name exist in disparate compilation units), then this implementation
+        will result in duplicate declaration issue, causing cross references to
+        link to the incorrect documentation.
+
+        To handle this case, an event "aerate-generate-anchor" is available to
+        be handled to generate a different *anchor*.
+        """
+
+        if self._anchor is None:
+            evname = "aerate-generate-anchor"
+            anchor = self.sphinx.emit_firstresult(evname, self)
+            self._anchor = anchor or self.name
+        return self._anchor
 
     @property
     def node(self) -> Element:
@@ -76,45 +98,39 @@ class Aeration:
         return self.aerate.render(self.matter, *args, **kwargs)
 
     def retrieve_matter(self):
-        """Return the *matter* of the aeration."""
-        raise NotImplementedError
+        """Return the *matter* (the definition node) of the aeration."""
+        raise NotImplementedError("must be implemented in a subclass")
 
 
 class CompoundAeration(Aeration):
     @property
     def document(self) -> ElementTree:
         """Return the XML document from the definition file of the compound."""
-        return self.aerate.load_document(self.id + ".xml")
+        return self.aerate.load_document(f"{self.id}.xml")
 
     def retrieve_matter(self):
-        """Return the *matter* of the aeration."""
-
-        result = self.document.xpath(r'//compounddef[@id=$id]', id=self.id)
-        if len(result) > 1:
-            raise LookupError(f"Multiple <compounddef>s with id {self.id!r} in {self.id}.xml")
-        elif not result:
-            raise LookupError(f"No <compounddef> with id {self.id!r} in {self.id}.xml")
+        result = self.document.xpath("//compounddef[@id=$id]", id=self.id)
+        if not result:
+            raise LookupError(f"No <compounddef> with id {self.id!r} in "
+                              f"{self.id}.xml")
+        elif len(result) > 1:
+            raise LookupError(f"Multiple <compounddef>s with id {self.id!r} "
+                              f"in {self.id}.xml")
         return result[0]
 
 
 class MemberAeration(Aeration):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._compound = None
-
     @property
     def compound(self):
-        """Return the compound that this member is inside as an aeration."""
-        if self._compound is None:
-            self._compound = self.aerate[self.node.getparent().attrib["refid"]]
-        return self._compound
+        """Return the compound aeration that this member is inside."""
+        return self.aerate[self.node.getparent().attrib["refid"]]
 
     def retrieve_matter(self):
-        """Return the *matter* of the aeration."""
-
-        result = self.compound.matter.xpath(r'//memberdef[@id=$id]', id=self.id)
-        if len(result) > 1:
-            raise LookupError(f"Multiple <memberdef>s with id {self.id!r} in {self.compound.id}.xml")
+        result = self.compound.matter.xpath("//memberdef[@id=$id]", id=self.id)
         if not result:
-            raise LookupError(f"No <memberdef> with id {self.id!r} in {self.compound.id}.xml")
+            raise LookupError(f"No <memberdef> with id {self.id!r} in "
+                              f"{self.compound.id}.xml")
+        elif len(result) > 1:
+            raise LookupError(f"Multiple <memberdef>s with id {self.id!r} in "
+                              f"{self.compound.id}.xml")
         return result[0]
