@@ -1,4 +1,6 @@
-from aerate.sphinx import FunctionDocumenter, MacroDocumenter, TypeDocumenter, StructDocumenter
+from aerate.sphinx import (
+    FunctionDocumenter, MacroDocumenter, TypeDocumenter, StructDocumenter,
+)
 import os
 
 __all__ = ("setup")

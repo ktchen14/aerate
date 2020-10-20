@@ -1,19 +1,15 @@
-import re
-
 # See https://github.com/doxygen/doxygen/blob/master/templates/xml/compound.xsd
 
-class SchemaError(Exception):
-    """Raised when a node is encountered that's unexpected from the schema."""
+# A <formula> node is structural if it begins with \[ or \begin{. Otherwise
+# it's inline. We'll include "formula" in both INLINE_TAGS and STRUCTURAL_TAGS
+# and handle the disambiguation in is_inline() and is_structural().
 
+import re
 
 DESCRIPTION_TAGS = {
     "briefdescription", "detaileddescription", "inbodydescription",
     "parameterdescription"
 }
-
-# A <formula> node is structural if it begins with \[ or \begin{. Otherwise
-# it's inline. We'll include "formula" in both INLINE_TAGS and STRUCTURAL_TAGS
-# and handle the disambiguation in is_inline() and is_structural().
 
 INLINE_TAGS = {
     "ulink", "bold", "s", "strike", "underline", "emphasis",
@@ -30,6 +26,10 @@ STRUCTURAL_TAGS = {
     "parameterlist", "xrefsect", "copydoc", "blockquote", "parblock",
     "formula",
 }
+
+
+class SchemaError(Exception):
+    """Raised when a node is encountered that's unexpected from the schema."""
 
 
 def is_description(node):

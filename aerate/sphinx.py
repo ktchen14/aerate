@@ -4,7 +4,9 @@ from sphinx.ext.autodoc import Documenter
 from sphinx.util import logging
 from typing import Any, Tuple, List
 
-__all__ = ("FunctionDocumenter", "MacroDocumenter", "TypeDocumenter", "StructDocumenter")
+__all__ = (
+    "FunctionDocumenter", "MacroDocumenter", "TypeDocumenter",
+    "StructDocumenter")
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +36,11 @@ class AerationDocumenter(Documenter):
     def import_object(self) -> bool:
         """Set *self.object* to be the aeration to be documented."""
 
-        self.object = self.aerate.find_member(self.modname, kind=self.aerationtype)
+        self.object = self.aerate.find_member(
+            self.modname, kind=self.aerationtype)
         if self.object.kind != self.aerationtype:
-            logger.warning(f"auto{self.objtype} name must reference a {self.aerationtype}")
+            logger.warning(f"auto{self.objtype} name must reference a "
+                           f"{self.aerationtype}")
             return False
         self.aerate.adjuster.handle(self.object.matter)
         return True
