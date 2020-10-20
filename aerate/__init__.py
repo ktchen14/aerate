@@ -1,4 +1,4 @@
-from aerate.sphinx import FunctionDocumenter, TypeDocumenter, StructDocumenter
+from aerate.sphinx import FunctionDocumenter, MacroDocumenter, TypeDocumenter, StructDocumenter
 import os
 
 __all__ = ("setup")
@@ -18,6 +18,7 @@ def setup(sphinx):
 
     sphinx.aerate = None
     sphinx.add_autodocumenter(FunctionDocumenter)
+    sphinx.add_autodocumenter(MacroDocumenter)
     sphinx.add_autodocumenter(TypeDocumenter)
     sphinx.add_autodocumenter(StructDocumenter)
 

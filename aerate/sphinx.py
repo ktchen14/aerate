@@ -4,7 +4,7 @@ from sphinx.ext.autodoc import Documenter
 from sphinx.util import logging
 from typing import Any, Tuple, List
 
-__all__ = ("FunctionDocumenter", "TypeDocumenter", "StructDocumenter")
+__all__ = ("FunctionDocumenter", "MacroDocumenter", "TypeDocumenter", "StructDocumenter")
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +76,19 @@ class FunctionDocumenter(AerationDocumenter):
         (argsstring_node,) = self.object.matter.xpath("./argsstring")
         return f"{type_text} {anchor}{argsstring_node.text}"
         # return definition_node.text + argsstring_node.text
+
+
+class MacroDocumenter(AerationDocumenter):
+    aerationtype = "define"
+    objtype = "aeratemacro"
+    directivetype = "macro"
+
+    def format_name(self) -> str:
+        anchor = self.object.anchor
+        namelist = self.object.matter.xpath("./param/defname[1]/text()")
+        if not namelist:
+            return anchor
+        return f"{anchor}({', '.join(namelist)})"
 
 
 class TypeDocumenter(AerationDocumenter):
