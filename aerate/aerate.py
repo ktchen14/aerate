@@ -11,24 +11,6 @@ PARSER = XMLParser(
     remove_pis=True, strip_cdata=True)
 
 
-class DocumentSentry:
-    """Used to track the documents used by aerate used over an interval."""
-
-    def __init__(self, aerate):
-        self.aerate = aerate
-        self.record = set()
-
-    def __enter__(self):
-        self.aerate.sentries.add(self)
-        return self
-
-    def __exit__(self, *args, **kwargs):
-        self.aerate.sentries.remove(self)
-
-    def signal_document_used(self, name):
-        self.record.add(name)
-
-
 class Aerate:
     def __init__(self, sphinx):
         self.sphinx = sphinx
@@ -141,3 +123,21 @@ class Aerate:
             return last_resort
 
         return max(result, key=lambda node: len(node.getparent()["refid"]))
+
+
+class DocumentSentry:
+    """Used to track the documents used by aerate used over an interval."""
+
+    def __init__(self, aerate):
+        self.aerate = aerate
+        self.record = set()
+
+    def __enter__(self):
+        self.aerate.sentries.add(self)
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        self.aerate.sentries.remove(self)
+
+    def signal_document_used(self, name):
+        self.record.add(name)
