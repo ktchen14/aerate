@@ -216,7 +216,7 @@ class MutationCursor:
 
         parent = node.getparent()
 
-        if node.tail or len(node.itersiblings()):
+        if node.tail or len(list(node.itersiblings())):
             continuation = node.makeelement(parent.tag,
                                             parent.attrib,
                                             parent.nsmap)
