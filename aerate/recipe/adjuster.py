@@ -112,12 +112,38 @@ def divide_para_by_type(self, cursor):
     return cursor
 
 
+@engine.rule("para")
+def double_lift_parblock_para(self, cursor):
+    result = cursor.node.xpath("./parblock/para")
+    if not result:
+        return cursor
+    node = result[0]
+    cursor.lift(node)
+    return cursor.lift(node)
+
+
+@engine.rule("parblock", unless=lambda node: node.text or len(node))
+def remove_null_parblock(self, cursor):
+    """Remove a ``parblock`` node with no text or children."""
+    return cursor.remove()
+
+
 @engine.rule("para", when=lambda node: node.text)
 def trim_para(self, cursor):
     cursor.node.text = cursor.node.text.lstrip()
 
 
-@engine.rule("para", unless=lambda node: node.text or len(node))
+# @engine.rule("para", unless=lambda node: node.text or len(node))
+@engine.rule("para")
 def remove_null_para(self, cursor):
     """Remove a ``para`` node with no text or children."""
+
+    if len(cursor.node):
+        from aerate.mutation import MutationCursor
+        subcursor = MutationCursor(cursor.node[0])
+        while subcursor and cursor.node in subcursor.node.iterancestors():
+            self.invoke(subcursor)
+
+    if cursor.node.text or len(cursor.node):
+        return cursor
     return cursor.remove()

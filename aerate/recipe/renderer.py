@@ -134,27 +134,44 @@ def render_inline_formula(self, node, before=""):
     return render_text(text, node.tail, before=before)
 
 
-@engine.rule("para")
-def render_para(self, node, buffer=""):
+@engine.rule("listitem", within="itemizedlist")
+def render_listitem(self, node, before=""):
     output = escape_text(node.text or "")
     for item in node:
-        output += self.invoke(item, output)
+        if item.tag != "para":
+            raise SchemaError(f"Can't handle <{item.tag}> in <{node.tag}>")
+        output += self.invoke(item, before=output or "- ")
+    output = textwrap.indent(output, " " * 2).strip()
+    return f"- {output}\n"
+
+@engine.rule("itemizedlist")
+def render_itemizedlist(self, node, before=""):
+    output = escape_text(node.text or "")
+    for item in node:
+        output += self.invoke(item, before=output)
+    return output + "\n"
+
+@engine.rule("para")
+def render_para(self, node, before=""):
+    output = escape_text(node.text or "")
+    for item in node:
+        output += self.invoke(item, before=output)
     return output + "\n\n"
 
 
 @engine.rule("parameterlist", when=lambda node: node.get("kind") == "param")
 def render_parameterlist(self, node, before=""):
-    total_output = ""
-    for item in node:
-        (name,) = item.xpath("./parameternamelist/parametername")
-        (description,) = item.xpath("./parameterdescription")
+    buffer = ""
+    for item in node.xpath("./parameteritem"):
+        (name,) = item.xpath("./parameternamelist/parametername[1]/text()")
+        (description_node,) = item.xpath("./parameterdescription")
 
-        output = f":param {name.text}: "
-        description_output = self.invoke(description)
+        output = f":param {name}: "
+        description_output = self.invoke(description_node, before=output)
 
         output += textwrap.indent(description_output, " " * len(output)).strip()
-        total_output += "\n" + output
-    return total_output + "\n\n"
+        buffer += "\n" + output
+    return buffer + "\n\n"
 
 
 @engine.rule(*DESCRIPTION_TAGS)
