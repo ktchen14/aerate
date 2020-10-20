@@ -1,3 +1,4 @@
+from sphinx.util import logging
 import re
 import unicodedata
 
@@ -9,6 +10,8 @@ __all__ = (
     "xref_macro_renderer", "xref_struct_renderer", "xref_union_renderer",
     "xref_enum_renderer", "xref_enumerator_renderer", "xref_type_renderer",
 )
+
+logger = logging.getLogger(__name__)
 
 
 def escape_text(text):
@@ -163,7 +166,7 @@ class InlineRenderer:
         """Render the *node*."""
         return self.render_text(node.text, node.tail, *args, **kwargs)
 
-    def render_text(self, text, tail, buffer=""):
+    def render_text(self, text, tail, before=""):
         """Render *text* as inline markup and its *tail* as normal text."""
 
         # Inline markup start-strings must be immediately followed by
@@ -181,7 +184,7 @@ class InlineRenderer:
         text = self.escape_inline_text(text)
 
         prefix = self.prefix
-        if self.should_escape_prefix(text, buffer[-1:]):
+        if self.should_escape_prefix(text, before[-1:]):
             prefix = f"\\ {prefix}"
 
         # Escape the tail before we decide whether to escape the suffix
@@ -199,10 +202,21 @@ class RoleRenderer(InlineRenderer):
         super().__init__(f":{role}:`", "`")
 
 
+class MathRenderer(RoleRenderer):
+    def __init__(self):
+        super().__init__("math")
+
+    def escape_inline_text(self, text):
+        if "`" in text:
+            logger.warning("can't render backtick (`) in inline math")
+            text = text.replace("`", "")
+        return text
+
+
 bold_renderer = InlineRenderer("**")
 computeroutput_renderer = InlineRenderer("``")
 emphasis_renderer = InlineRenderer("*")
-math_renderer = RoleRenderer("math")
+math_renderer = MathRenderer()
 subscript_renderer = RoleRenderer("subscript")
 superscript_renderer = RoleRenderer("superscript")
 

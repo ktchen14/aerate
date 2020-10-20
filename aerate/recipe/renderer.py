@@ -6,6 +6,7 @@ from aerate.render import (
     escape_text, bold_renderer, emphasis_renderer, math_renderer,
     computeroutput_renderer, subscript_renderer, superscript_renderer,
     xref_func_renderer)
+import re
 import textwrap
 
 engine: Renderer = engine  # Stop "F821 undefined name 'engine'"
@@ -118,13 +119,19 @@ def render_superscript(self, node, before=""):
 
 @engine.rule("formula", when=lambda node: is_structural(node))
 def render_structural_formula(self, node, before=""):
+    assert not node.tail, "structural node in <para> shouldn't have tail text"
     prefix = ".. math::\n   :nowrap:\n\n"
     return prefix + textwrap.indent(node.text, " " * 3)
 
 
 @engine.rule("formula", when=lambda node: is_inline(node))
 def render_inline_formula(self, node, before=""):
-    return math_renderer.render(node, before=before)
+    render_text = math_renderer.render_text
+
+    # Trim $ from the node text
+    text = re.sub(r"^\s*\$\s*", "", node.text)
+    text = re.sub(r"\s*\$\s*$", "", text)
+    return render_text(text, node.tail, before=before)
 
 
 @engine.rule("para")
