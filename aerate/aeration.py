@@ -91,11 +91,16 @@ class Aeration:
         """Memoize and return the *matter* of the aeration."""
         if self._matter is None:
             self._matter = self.retrieve_matter()
+        self.signal_used()
         return self._matter
 
     def render(self, *args, **kwargs):
         """Render the aeration's *matter*."""
         return self.aerate.render(self.matter, *args, **kwargs)
+
+    def signal_used(self):
+        """Signal to the aerate instance that the aeration was used."""
+        raise NotImplementedError("must be implemented in a subclass")
 
     def retrieve_matter(self):
         """Return the *matter* (the definition node) of the aeration."""
@@ -107,6 +112,9 @@ class CompoundAeration(Aeration):
     def document(self) -> ElementTree:
         """Return the XML document from the definition file of the compound."""
         return self.aerate.load_document(f"{self.id}.xml")
+
+    def signal_used(self):
+        self.aerate.signal_document_used(f"{self.id}.xml")
 
     def retrieve_matter(self):
         result = self.document.xpath("//compounddef[@id=$id]", id=self.id)
@@ -124,6 +132,9 @@ class MemberAeration(Aeration):
     def compound(self):
         """Return the compound aeration that this member is inside."""
         return self.aerate[self.node.getparent().attrib["refid"]]
+
+    def signal_used(self):
+        self.compound.signal_used()
 
     def retrieve_matter(self):
         result = self.compound.matter.xpath("//memberdef[@id=$id]", id=self.id)

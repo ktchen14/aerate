@@ -3,6 +3,7 @@ from docutils.parsers.rst import directives
 from sphinx.ext.autodoc import Documenter
 from sphinx.util import logging
 from typing import Any, Tuple, List
+import os
 
 __all__ = (
     "FunctionDocumenter", "MacroDocumenter", "TypeDocumenter",
@@ -61,6 +62,14 @@ class AerationDocumenter(Documenter):
                      ) -> Tuple[str, List[str]]:
         """Return the name of the object to document as the module name."""
         return base, []
+
+    def generate(self, *args, **kwargs):
+        # Record each document used in the directive's filename set
+        with self.aerate.detect_used() as sentry:
+            super().generate(*args, **kwargs)
+        used = {"index.xml"} | sentry.record
+        used = {os.path.join(self.aerate.doxygen_root, i) for i in used}
+        self.directive.filename_set |= used
 
 
 class FunctionDocumenter(AerationDocumenter):

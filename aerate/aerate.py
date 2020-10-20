@@ -11,14 +11,33 @@ PARSER = XMLParser(
     remove_pis=True, strip_cdata=True)
 
 
+class DocumentSentry:
+    """Used to track the documents used by aerate used over an interval."""
+
+    def __init__(self, aerate):
+        self.aerate = aerate
+        self.record = set()
+
+    def __enter__(self):
+        self.aerate.sentries.add(self)
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        self.aerate.sentries.remove(self)
+
+    def signal_document_used(self, name):
+        self.record.add(name)
+
+
 class Aerate:
     def __init__(self, sphinx):
         self.sphinx = sphinx
         self.doxygen_root = sphinx.config.aerate_doxygen_root
 
         self.aeration_memo = {}
-        self.document_memo = {}
 
+        self.document_memo = {}
+        self.sentries = set()
         self.document = self.load_document("index.xml")
 
         self.adjuster = MutationEngine(self)
@@ -55,7 +74,16 @@ class Aerate:
             self.document_memo[name] = etree.parse(
                 os.path.join(self.doxygen_root, name),
                 PARSER)
+        self.signal_document_used(name)
         return self.document_memo[name]
+
+    def signal_document_used(self, name):
+        for sentry in self.sentries:
+            sentry.signal_document_used(name)
+
+    def detect_used(self):
+        """Return a `DocumentSentry` to observe the instance."""
+        return DocumentSentry(self)
 
     def find_member(self, name, kind=None):
         """Find and return the aeration of a member by *name* and *kind*."""
