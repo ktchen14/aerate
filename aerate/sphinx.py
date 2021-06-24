@@ -68,7 +68,7 @@ class AerationDocumenter(Documenter):
             super().generate(*args, **kwargs)
         used = {"index.xml"} | sentry.record
         used = {os.path.join(self.aerate.doxygen_root, i) for i in used}
-        self.directive.filename_set |= used
+        self.directive.record_dependencies |= used
 
 
 class FunctionDocumenter(AerationDocumenter):
