@@ -5,7 +5,7 @@ from aerate.schema import (
 from aerate.render import (
     escape_text, bold_renderer, emphasis_renderer, math_renderer,
     computeroutput_renderer, subscript_renderer, superscript_renderer,
-    xref_func_renderer)
+    xref_func_renderer, xref_macro_renderer)
 import re
 import textwrap
 
@@ -76,6 +76,12 @@ def render_ref(self, node, before=""):
         else:
             inside = f"{node.text} <{target.anchor}>"
         return xref_func_renderer.render_text(inside, node.tail, before)
+    elif target.kind == "define":
+        if node.text == target.anchor:
+            inside = node.text
+        else:
+            inside = f"{node.text} <{target.anchor}>"
+        return xref_macro_renderer.render_text(inside, node.tail, before)
     elif target.kind == "typedef":
         if target.name == node.text:
             return f":c:type:`{target.name}`{node.tail or ''}"
