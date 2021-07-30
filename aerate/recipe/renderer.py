@@ -3,9 +3,9 @@ from aerate.schema import (
     DESCRIPTION_TAGS, SchemaError, is_inline, is_structural,
 )
 from aerate.render import (
-    escape_text, bold_renderer, emphasis_renderer, math_renderer,
-    computeroutput_renderer, subscript_renderer, superscript_renderer,
-    xref_func_renderer, xref_macro_renderer)
+    escape_text, ulink_renderer, bold_renderer, emphasis_renderer,
+    math_renderer, computeroutput_renderer, subscript_renderer,
+    superscript_renderer, xref_func_renderer, xref_macro_renderer)
 import re
 import textwrap
 
@@ -44,6 +44,14 @@ def render_simplesect_remark(self, node, before=""):
 @engine.rule("simplesect", when=lambda node: node.get("kind") == "see")
 def render_simplesect_see(self, node, before=""):
     prefix = ".. seealso::"
+    output = render_simplesect(self, node, before)
+    output = textwrap.indent(output, " " * 3)
+    return prefix + "\n\n" + output + "\n\n"
+
+
+@engine.rule("simplesect", when=lambda node: node.get("kind") == "par")
+def render_simplesect_par(self, node, before=""):
+    prefix = ".. admonition:: " + node.xpath("./title/text()")[0]
     output = render_simplesect(self, node, before)
     output = textwrap.indent(output, " " * 3)
     return prefix + "\n\n" + output + "\n\n"
@@ -96,6 +104,11 @@ def render_programlisting(self, node, before=""):
     prefix = ".. code-block:: c\n\n"
     output = "\n".join(self.invoke(item) for item in node)
     return prefix + textwrap.indent(output, " " * 3)
+
+
+@engine.rule("ulink")
+def render_ulink(self, node, before=""):
+    return ulink_renderer.render(node, before)
 
 
 @engine.rule("bold")

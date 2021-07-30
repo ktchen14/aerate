@@ -3,12 +3,13 @@ import re
 import unicodedata
 
 __all__ = (
-    "escape_text", "InlineRenderer", "RoleRenderer", "bold_renderer",
-    "emphasis_renderer", "math_renderer", "computeroutput_renderer",
-    "subscript_renderer", "superscript_renderer", "xref_member_renderer",
-    "xref_data_renderer", "xref_var_renderer", "xref_func_renderer",
-    "xref_macro_renderer", "xref_struct_renderer", "xref_union_renderer",
-    "xref_enum_renderer", "xref_enumerator_renderer", "xref_type_renderer",
+    "escape_text", "InlineRenderer", "RoleRenderer", "ulink_renderer",
+    "bold_renderer", "emphasis_renderer", "math_renderer",
+    "computeroutput_renderer", "subscript_renderer", "superscript_renderer",
+    "xref_member_renderer", "xref_data_renderer", "xref_var_renderer",
+    "xref_func_renderer", "xref_macro_renderer", "xref_struct_renderer",
+    "xref_union_renderer", "xref_enum_renderer", "xref_enumerator_renderer",
+    "xref_type_renderer",
 )
 
 logger = logging.getLogger(__name__)
@@ -213,6 +214,17 @@ class MathRenderer(RoleRenderer):
         return text
 
 
+class UlinkRenderer(InlineRenderer):
+    def __init__(self):
+        super().__init__("`", "`_")
+
+    def render(self, node, *args, **kwargs):
+        """Render the *node*."""
+        text = f"{node.text} <{node.attrib['url']}>"
+        return self.render_text(text, node.tail, *args, **kwargs)
+
+
+ulink_renderer = UlinkRenderer()
 bold_renderer = InlineRenderer("**")
 computeroutput_renderer = InlineRenderer("``")
 emphasis_renderer = InlineRenderer("*")
